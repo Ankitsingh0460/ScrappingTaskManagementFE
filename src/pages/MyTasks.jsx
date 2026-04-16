@@ -1,23 +1,99 @@
 import { useEffect, useState } from "react";
 import axios from "../api/axios";
+import Sidebar from "../components/Sidebar";
+import Header from "../components/Header";
 
 export default function MyTasks() {
   const [tasks, setTasks] = useState([]);
 
   useEffect(() => {
-    axios.get("/tasks/my").then(res => setTasks(res.data));
+    fetchTasks();
   }, []);
 
-  return (
-    <div className="p-4">
-      <h2>My Tasks</h2>
+  const fetchTasks = async () => {
+    try {
+      const res = await axios.get("/tasks/my");
+      setTasks(res.data);
+    } catch (err) {
+      console.log(err);
+    }
+  };
 
-      {tasks.map(t => (
-        <div key={t._id} className="border p-2 mb-2">
-          <h3>{t.crawlerName}</h3>
-          <p>Status: {t.status}</p>
+  return (
+    <div className="flex">
+
+      {/* Sidebar */}
+      <Sidebar />
+
+      {/* Main */}
+      <div className="flex-1 bg-gray-100 min-h-screen">
+        <Header />
+
+        <div className="p-6">
+
+          {/* Title */}
+          <h2 className="text-xl font-semibold mb-4">
+            My Tasks
+          </h2>
+
+          {/* Task Cards */}
+          <div className="grid grid-cols-3 gap-4">
+
+            {tasks.map(t => (
+              <div
+                key={t._id}
+                className="bg-white p-5 rounded-xl shadow hover:shadow-md transition"
+              >
+
+                {/* Title */}
+                <h3 className="font-semibold text-lg mb-2">
+                  {t.crawlerName}
+                </h3>
+
+                {/* Status */}
+                <p className="mb-2 text-sm text-gray-600">
+                  Status:
+                </p>
+
+                <span
+                  className={`px-3 py-1 rounded-full text-xs font-semibold
+                    ${
+                      t.status === "completed"
+                        ? "bg-green-100 text-green-600"
+                        : t.status === "in_progress"
+                        ? "bg-yellow-100 text-yellow-600"
+                        : t.status === "testing"
+                        ? "bg-blue-100 text-blue-600"
+                        : "bg-gray-100 text-gray-600"
+                    }
+                  `}
+                >
+                  {t.status}
+                </span>
+
+                {/* Optional Info */}
+                <p className="mt-3 text-sm text-gray-500">
+                  Due:{" "}
+                  {t.expectedCompletionDate
+                    ? new Date(t.expectedCompletionDate).toDateString()
+                    : "-"}
+                </p>
+
+              </div>
+            ))}
+
+          </div>
+
+          {/* Empty State */}
+          {tasks.length === 0 && (
+            <p className="text-gray-500 mt-4">
+              No tasks assigned yet
+            </p>
+          )}
+
         </div>
-      ))}
+      </div>
+
     </div>
   );
 }

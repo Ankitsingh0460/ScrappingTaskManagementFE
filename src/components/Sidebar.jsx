@@ -1,15 +1,47 @@
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
+import { LayoutDashboard, Folder, CheckSquare, Users } from "lucide-react";
 
 export default function Sidebar() {
-  return (
-    <div className="w-64 h-screen bg-white shadow-md p-4">
-      <h2 className="text-xl font-bold mb-6">CrawlerOps</h2>
+  const location = useLocation();
 
-      <ul className="space-y-4">
-        <li><Link to="/dashboard">Dashboard</Link></li>
-        <li><Link to="/projects">Projects</Link></li>
-        <li><Link to="/my-tasks">Tasks</Link></li>
-        <li><Link to="/users">Operation PICs</Link></li>
+  const menu = [
+    { name: "Dashboard", path: "/dashboard", icon: <LayoutDashboard size={18} /> },
+    { name: "Projects", path: "/projects", icon: <Folder size={18} /> },
+    { name: "Tasks", path: "/tasks", icon: <CheckSquare size={18} /> },
+    { name: "Operation PICs", path: "/users", icon: <Users size={18} /> }
+  ];
+
+  return (
+    <div className="w-64 h-screen bg-white border-r shadow-sm p-4">
+
+      {/* Logo */}
+      <h2 className="text-lg font-bold mb-6">CrawlerOps</h2>
+
+      {/* Menu */}
+      <ul className="space-y-2">
+
+        {menu.map((item, index) => {
+          const isActive = location.pathname === item.path;
+
+          return (
+            <li key={index}>
+              <Link
+                to={item.path}
+                className={`flex items-center gap-3 p-3 rounded-lg text-sm transition
+                  ${
+                    isActive
+                      ? "bg-blue-100 text-blue-600 font-medium"
+                      : "text-gray-600 hover:bg-gray-100"
+                  }
+                `}
+              >
+                {item.icon}
+                {item.name}
+              </Link>
+            </li>
+          );
+        })}
+
       </ul>
     </div>
   );

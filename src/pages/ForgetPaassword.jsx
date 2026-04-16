@@ -1,0 +1,63 @@
+import { useState } from "react";
+import axios from "../api/axios";
+
+export default function ForgotPassword() {
+  const [email, setEmail] = useState("");
+  const [message, setMessage] = useState("");
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+
+    try {
+      await axios.post("/auth/forgot-password", { email });
+      setMessage("Password reset link sent to your email");
+    } catch (err) {
+      setMessage("Something went wrong");
+    }
+  };
+
+  return (
+    <div className="h-screen flex items-center justify-center bg-gray-100">
+
+      <div className="bg-white p-8 rounded-2xl shadow-md w-[420px]">
+
+        <h2 className="text-2xl font-semibold mb-2">
+          Forgot Password
+        </h2>
+
+        <p className="text-gray-500 mb-6">
+          Enter your email to receive reset instructions
+        </p>
+
+        <form onSubmit={handleSubmit}>
+
+          <label className="block mb-1 text-sm font-medium">
+            Email
+          </label>
+
+          <input
+            type="email"
+            placeholder="Enter your Email"
+            className="w-full p-3 mb-4 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            onChange={(e) => setEmail(e.target.value)}
+          />
+
+          <button
+            type="submit"
+            className="w-full bg-indigo-600 hover:bg-indigo-700 text-white p-3 rounded-lg"
+          >
+            Send Reset Link
+          </button>
+
+        </form>
+
+        {message && (
+          <p className="mt-4 text-center text-sm text-gray-600">
+            {message}
+          </p>
+        )}
+
+      </div>
+    </div>
+  );
+}

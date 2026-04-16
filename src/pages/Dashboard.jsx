@@ -15,72 +15,110 @@ export default function Dashboard() {
     setTasks(res.data);
   };
 
-  // Stats
   const total = tasks.length;
   const completed = tasks.filter(t => t.status === "completed").length;
   const overdue = tasks.filter(
     t => new Date(t.expectedCompletionDate) < new Date() && t.status !== "completed"
   ).length;
+  const inProgress = tasks.filter(t => t.status === "in_progress").length;
 
   return (
     <div className="flex">
       <Sidebar />
 
-      <div className="flex-1 bg-gray-100 min-h-screen">
+      <div className="flex-1 bg-gradient-to-br from-gray-100 to-gray-200 min-h-screen">
         <Header />
 
         {/* Cards */}
-        <div className="grid grid-cols-4 gap-4 p-4">
-          <div className="bg-white p-4 rounded shadow">
-            <h3>Total Tasks</h3>
-            <p className="text-xl">{total}</p>
+        <div className="grid grid-cols-4 gap-6 p-6">
+
+          {/* Total */}
+          <div className="bg-gradient-to-r from-indigo-500 to-indigo-600 text-white p-5 rounded-xl shadow-lg">
+            <h3 className="text-sm opacity-80">Total Tasks</h3>
+            <p className="text-3xl font-bold">{total}</p>
           </div>
 
-          <div className="bg-white p-4 rounded shadow">
-            <h3>Completed</h3>
-            <p className="text-xl">{completed}</p>
+          {/* Completed */}
+          <div className="bg-gradient-to-r from-green-500 to-green-600 text-white p-5 rounded-xl shadow-lg">
+            <h3 className="text-sm opacity-80">Completed</h3>
+            <p className="text-3xl font-bold">{completed}</p>
           </div>
 
-          <div className="bg-white p-4 rounded shadow">
-            <h3>Overdue</h3>
-            <p className="text-xl text-red-500">{overdue}</p>
+          {/* Overdue */}
+          <div className="bg-gradient-to-r from-red-500 to-red-600 text-white p-5 rounded-xl shadow-lg">
+            <h3 className="text-sm opacity-80">Overdue</h3>
+            <p className="text-3xl font-bold">{overdue}</p>
           </div>
 
-          <div className="bg-white p-4 rounded shadow">
-            <h3>In Progress</h3>
-            <p className="text-xl">
-              {tasks.filter(t => t.status === "in_progress").length}
-            </p>
+          {/* In Progress */}
+          <div className="bg-gradient-to-r from-yellow-400 to-orange-500 text-white p-5 rounded-xl shadow-lg">
+            <h3 className="text-sm opacity-80">In Progress</h3>
+            <p className="text-3xl font-bold">{inProgress}</p>
           </div>
+
         </div>
 
         {/* Task Table */}
-        <div className="p-4">
-          <div className="bg-white p-4 rounded shadow">
-            <h3 className="mb-4">Tasks</h3>
+        <div className="p-6">
+          <div className="bg-white p-6 rounded-xl shadow-lg">
 
-            <table className="w-full border">
+            <h3 className="mb-4 text-lg font-semibold">
+              Task Overview
+            </h3>
+
+            <table className="w-full border-collapse">
+
               <thead>
-                <tr className="bg-gray-200">
-                  <th>Name</th>
-                  <th>Developer</th>
-                  <th>Status</th>
-                  <th>Due Date</th>
+                <tr className="bg-gray-100 text-left text-sm text-gray-600">
+                  <th className="p-3">Crawler</th>
+                  <th className="p-3">Developer</th>
+                  <th className="p-3">Status</th>
+                  <th className="p-3">Due Date</th>
                 </tr>
               </thead>
 
               <tbody>
                 {tasks.map(task => (
-                  <tr key={task._id} className="text-center border-t">
-                    <td>{task.crawlerName}</td>
-                    <td>{task.developer?.name}</td>
-                    <td>{task.status}</td>
-                    <td>
-                      {new Date(task.expectedCompletionDate).toDateString()}
+                  <tr
+                    key={task._id}
+                    className="border-t hover:bg-gray-50 transition"
+                  >
+                    <td className="p-3 font-medium">
+                      {task.crawlerName}
                     </td>
+
+                    <td className="p-3">
+                      {task.developer?.name || "-"}
+                    </td>
+
+                    {/* Status Badge */}
+                    <td className="p-3">
+                      <span
+                        className={`px-3 py-1 rounded-full text-xs font-semibold
+                          ${
+                            task.status === "completed"
+                              ? "bg-green-100 text-green-600"
+                              : task.status === "in_progress"
+                              ? "bg-yellow-100 text-yellow-600"
+                              : task.status === "testing"
+                              ? "bg-blue-100 text-blue-600"
+                              : "bg-gray-100 text-gray-600"
+                          }`}
+                      >
+                        {task.status}
+                      </span>
+                    </td>
+
+                    <td className="p-3 text-sm text-gray-500">
+                      {task.expectedCompletionDate
+                        ? new Date(task.expectedCompletionDate).toDateString()
+                        : "-"}
+                    </td>
+
                   </tr>
                 ))}
               </tbody>
+
             </table>
 
           </div>
