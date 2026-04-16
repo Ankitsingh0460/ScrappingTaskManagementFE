@@ -5,7 +5,9 @@ import Header from "../components/Header";
 
 export default function Users() {
   const [users, setUsers] = useState([]);
-  const [error, setError] = useState(""); // 🔥 added
+  const [error, setError] = useState("");
+
+  const user = JSON.parse(localStorage.getItem("user")); // 🔥 NEW
 
   const [form, setForm] = useState({
     name: "",
@@ -25,7 +27,6 @@ export default function Users() {
     } catch (err) {
       console.log(err);
 
-      // 🔥 handle unauthorized
       if (err.response?.status === 401) {
         setError("Unauthorized - Please login again");
       } else if (err.response?.status === 403) {
@@ -56,6 +57,21 @@ export default function Users() {
     }
   };
 
+  // 🔥 DELETE USER FUNCTION
+  const deleteUser = async (id) => {
+    const confirmDelete = confirm("Are you sure to delete this user?");
+
+    if (!confirmDelete) return;
+
+    try {
+      await axios.delete(`/users/${id}`);
+      fetchUsers();
+    } catch (err) {
+      console.log(err);
+      alert("Error deleting user");
+    }
+  };
+
   return (
     <div className="flex">
 
@@ -73,12 +89,12 @@ export default function Users() {
             Operation PICs
           </h2>
 
-          {/* 🔥 ERROR MESSAGE */}
+          {/* ERROR */}
           {error && (
             <p className="text-red-500 mb-4">{error}</p>
           )}
 
-          {/* Add User Card */}
+          {/* Add User */}
           <div className="bg-white p-6 rounded-xl shadow mb-6 grid grid-cols-4 gap-4">
 
             <input
@@ -112,7 +128,6 @@ export default function Users() {
               <option value="tester">Tester</option>
             </select>
 
-            {/* Button */}
             <div className="col-span-4 flex justify-end">
               <button
                 onClick={createUser}
@@ -134,6 +149,7 @@ export default function Users() {
                   <th className="p-3">Name</th>
                   <th className="p-3">Email</th>
                   <th className="p-3">Role</th>
+                  <th className="p-3">Action</th> {/* 🔥 NEW */}
                 </tr>
               </thead>
 
@@ -158,6 +174,18 @@ export default function Users() {
                       >
                         {u.role}
                       </span>
+                    </td>
+
+                    {/* 🔥 DELETE BUTTON (ADMIN ONLY) */}
+                    <td className="p-3">
+                      {user?.role === "admin" && (
+                        <button
+                          onClick={() => deleteUser(u._id)}
+                          className="text-red-600 text-sm"
+                        >
+                          Delete
+                        </button>
+                      )}
                     </td>
 
                   </tr>

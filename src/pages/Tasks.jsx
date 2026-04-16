@@ -7,7 +7,7 @@ import CreateTask from "./CreateTask";
 export default function Tasks() {
   const [tasks, setTasks] = useState([]);
   const [showModal, setShowModal] = useState(false);
-
+const [openMenu, setOpenMenu] = useState(null);
   const user = JSON.parse(localStorage.getItem("user"));
 
   useEffect(() => {
@@ -154,8 +154,8 @@ const editTask = async (task) => {
                   <th className="p-3">Due</th>
                   <th className="p-3">Progress</th>
                   <th className="p-3">Status</th>
-                  <th className="p-3">Stuck</th>
-                  <th className="p-3">Sheet</th>
+                  <th className="p-3">Stuck Reason</th>
+                  <th className="p-3">Testing Sheet</th>
                   <th className="p-3">Penalty</th>
                   <th className="p-3">Action</th>
                 </tr>
@@ -217,7 +217,7 @@ const editTask = async (task) => {
 
                       {/* Stuck */}
                       <td
-                        className="p-3 max-w-[120px] truncate"
+                        className="p-3 max-w-[80px] truncate"
                         title={t.stuckReason}
                       >
                         {t.stuckReason || "-"}
@@ -273,41 +273,70 @@ const editTask = async (task) => {
                         )}
 
                         {/* 🔥 ADMIN ACTIONS */}
-                       {user?.role === "admin" && (
-  <>
-    {t.status !== "completed" && (
+    <td className="p-3 relative">
+
+  {user?.role === "admin" && (
+    <>
+      {/* 🔥 THREE DOT BUTTON */}
       <button
-        onClick={() => verifyTask(t._id)}
-        className="text-green-600 text-xs"
+        onClick={() =>
+          setOpenMenu(openMenu === t._id ? null : t._id)
+        }
+        className="text-gray-600 text-lg"
       >
-        Verify
+        ⋮
       </button>
-    )}
 
-    <button
-      onClick={() => addPenalty(t._id)}
-      className="text-red-600 text-xs"
-    >
-      Add Penalty
-    </button>
+      {/* 🔥 DROPDOWN */}
+      {openMenu === t._id && (
+<div className="absolute left-0 bottom-full mb-2 w-36 bg-white border rounded shadow z-50">          {t.status !== "completed" && (
+            <button
+              onClick={() => {
+                verifyTask(t._id);
+                setOpenMenu(null);
+              }}
+              className="block w-full text-left px-3 py-2 text-sm hover:bg-gray-100 text-green-600"
+            >
+              Verify
+            </button>
+          )}
 
-    {/* 🔥 NEW EDIT
-    <button
-      onClick={() => editTask(t)}
-      className="text-yellow-600 text-xs"
-    >
-      Edit
-    </button> */}
+          <button
+            onClick={() => {
+              addPenalty(t._id);
+              setOpenMenu(null);
+            }}
+            className="block w-full text-left px-3 py-2 text-sm hover:bg-gray-100 text-red-600"
+          >
+            Add Penalty
+          </button>
 
-    {/* 🔥 NEW DELETE */}
-    <button
-      onClick={() => deleteTask(t._id)}
-      className="text-red-800 text-xs"
-    >
-      Delete
-    </button>
-  </>
-)}
+          <button
+            onClick={() => {
+              editTask(t);
+              setOpenMenu(null);
+            }}
+            className="block w-full text-left px-3 py-2 text-sm hover:bg-gray-100 text-yellow-600"
+          >
+            Edit
+          </button>
+
+          <button
+            onClick={() => {
+              deleteTask(t._id);
+              setOpenMenu(null);
+            }}
+            className="block w-full text-left px-3 py-2 text-sm hover:bg-gray-100 text-red-700"
+          >
+            Delete
+          </button>
+
+        </div>
+      )}
+    </>
+  )}
+
+</td>
 
                       </td>
 
