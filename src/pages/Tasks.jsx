@@ -19,11 +19,43 @@ export default function Tasks() {
     setTasks(res.data);
   };
 
+  // FORMAT DATE
+  const formatDate = (date) => {
+    if (!date) return "-";
+    const d = new Date(date);
+    return `${String(d.getDate()).padStart(2, "0")}/${String(
+      d.getMonth() + 1
+    ).padStart(2, "0")}/${d.getFullYear()}`;
+  };
+
   // VERIFY
   const verifyTask = async (id) => {
     await axios.put(`/tasks/${id}/verify`);
     fetchTasks();
   };
+
+  // DELETE TASK
+const deleteTask = async (id) => {
+  const confirmDelete = confirm("Are you sure to delete this task?");
+
+  if (!confirmDelete) return;
+
+  await axios.delete(`/tasks/${id}`);
+  fetchTasks();
+};
+
+// EDIT TASK (simple version)
+const editTask = async (task) => {
+  const name = prompt("Edit crawler name", task.crawlerName);
+
+  if (!name) return;
+
+  await axios.put(`/tasks/${task._id}`, {
+    crawlerName: name
+  });
+
+  fetchTasks();
+};
 
   // UPDATE PROGRESS
   const updateProgress = async (id, currentProgress) => {
@@ -60,7 +92,7 @@ export default function Tasks() {
     fetchTasks();
   };
 
-  // 🔥 STUCK REASON
+  // STUCK
   const updateStuck = async (id) => {
     const reason = prompt("Enter stuck reason");
 
@@ -68,6 +100,19 @@ export default function Tasks() {
 
     await axios.put(`/tasks/${id}`, {
       stuckReason: reason
+    });
+
+    fetchTasks();
+  };
+
+  // 🔥 ADD PENALTY (ADMIN)
+  const addPenalty = async (id) => {
+    const comment = prompt("Enter penalty comment");
+
+    if (!comment) return;
+
+    await axios.put(`/tasks/${id}/penalty`, {
+      comment
     });
 
     fetchTasks();
@@ -82,15 +127,18 @@ export default function Tasks() {
 
         <div className="p-6">
 
+          {/* Header */}
           <div className="flex justify-between mb-4">
             <h2 className="text-xl font-semibold">All Tasks</h2>
 
-            <button
-              onClick={() => setShowModal(true)}
-              className="bg-indigo-600 text-white px-4 py-2 rounded-lg"
-            >
-              + Create Task
-            </button>
+            {user?.role === "admin" && (
+              <button
+                onClick={() => setShowModal(true)}
+                className="bg-indigo-600 text-white px-4 py-2 rounded-lg"
+              >
+                + Create Task
+              </button>
+            )}
           </div>
 
           <div className="bg-white rounded-xl shadow p-6 overflow-x-auto">
@@ -105,9 +153,10 @@ export default function Tasks() {
                   <th className="p-3">Assign</th>
                   <th className="p-3">Due</th>
                   <th className="p-3">Progress</th>
-                  <th className="p-3">Today Work</th>
+                  <th className="p-3">Status</th>
                   <th className="p-3">Stuck</th>
                   <th className="p-3">Sheet</th>
+                  <th className="p-3">Penalty</th>
                   <th className="p-3">Action</th>
                 </tr>
               </thead>
@@ -120,45 +169,57 @@ export default function Tasks() {
                     <tr key={t._id} className="border-t hover:bg-gray-50">
 
                       <td className="p-3">{t.crawlerName}</td>
-
                       <td className="p-3">{t.developer?.name}</td>
-
                       <td className="p-3">{t.tester?.name}</td>
 
-                      {/* Assign Date */}
-                      <td className="p-3">
-                        {t.assignDate
-                          ? new Date(t.assignDate).toDateString()
-                          : "-"}
-                      </td>
-
-                      {/* Due Date */}
-                      <td className="p-3">
-                        {t.expectedCompletionDate
-                          ? new Date(t.expectedCompletionDate).toDateString()
-                          : "-"}
-                      </td>
+                      <td className="p-3">{formatDate(t.assignDate)}</td>
+                      <td className="p-3">{formatDate(t.expectedCompletionDate)}</td>
 
                       {/* Progress */}
-                      <td className="p-3">
-                        <div className="bg-gray-200 h-2 rounded">
+                      <td className="p-3 w-[120px]">
+
+                        <div className="bg-gray-200 h-1.5 rounded">
                           <div
-                            className="bg-indigo-600 h-2 rounded"
+                            className="bg-indigo-600 h-1.5 rounded"
                             style={{ width: `${t.progress || 0}%` }}
                           ></div>
                         </div>
-                        <span className="text-xs">{t.progress}%</span>
+
+                        <span className="text-[10px] text-gray-600">
+                          {t.progress}%
+                        </span>
+
+                        <p className="text-xs text-gray-500 mt-1 break-words">
+                          {lastLog?.note || "No update"}
+                        </p>
+
                       </td>
 
-                      {/* 🔥 Today Work (HOVER FULL TEXT) */}
-                      <td className="p-3 max-w-[150px] truncate"
-                          title={lastLog?.note}>
-                        {lastLog?.note || "-"}
-                      </td>
+                      <td className="p-3">
+  <span
+    className={`px-2 py-1 rounded text-xs font-semibold
+      ${
+        t.status === "completed"
+          ? "bg-green-100 text-green-600"
+          : t.status === "in_progress"
+          ? "bg-yellow-100 text-yellow-600"
+          : t.status === "testing"
+          ? "bg-blue-100 text-blue-600"
+          : t.status === "dev_done"
+          ? "bg-purple-100 text-purple-600"
+          : "bg-gray-100 text-gray-600"
+      }
+    `}
+  >
+    {t.status}
+  </span>
+</td>
 
-                      {/* 🔥 Stuck Reason */}
-                      <td className="p-3 max-w-[150px] truncate"
-                          title={t.stuckReason}>
+                      {/* Stuck */}
+                      <td
+                        className="p-3 max-w-[120px] truncate"
+                        title={t.stuckReason}
+                      >
                         {t.stuckReason || "-"}
                       </td>
 
@@ -173,6 +234,14 @@ export default function Tasks() {
                             View
                           </a>
                         ) : "-"}
+                      </td>
+
+                      {/* 🔥 Penalty Column */}
+                      <td
+                        className="p-3 max-w-[150px] break-words text-xs text-red-600"
+                        title={t.penaltyComment}
+                      >
+                        {t.penaltyComment || "-"}
                       </td>
 
                       {/* Actions */}
@@ -203,14 +272,42 @@ export default function Tasks() {
                           </>
                         )}
 
-                        {user?.role === "admin" && t.status !== "completed" && (
-                          <button
-                            onClick={() => verifyTask(t._id)}
-                            className="text-green-600 text-xs"
-                          >
-                            Verify
-                          </button>
-                        )}
+                        {/* 🔥 ADMIN ACTIONS */}
+                       {user?.role === "admin" && (
+  <>
+    {t.status !== "completed" && (
+      <button
+        onClick={() => verifyTask(t._id)}
+        className="text-green-600 text-xs"
+      >
+        Verify
+      </button>
+    )}
+
+    <button
+      onClick={() => addPenalty(t._id)}
+      className="text-red-600 text-xs"
+    >
+      Add Penalty
+    </button>
+
+    {/* 🔥 NEW EDIT
+    <button
+      onClick={() => editTask(t)}
+      className="text-yellow-600 text-xs"
+    >
+      Edit
+    </button> */}
+
+    {/* 🔥 NEW DELETE */}
+    <button
+      onClick={() => deleteTask(t._id)}
+      className="text-red-800 text-xs"
+    >
+      Delete
+    </button>
+  </>
+)}
 
                       </td>
 
