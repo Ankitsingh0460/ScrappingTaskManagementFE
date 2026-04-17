@@ -4,6 +4,10 @@ import { LayoutDashboard, Folder, CheckSquare, Users } from "lucide-react";
 export default function Sidebar() {
   const location = useLocation();
 
+  // ✅ Get user from localStorage
+  const storedUser = localStorage.getItem("user");
+  const user = storedUser ? JSON.parse(storedUser) : null;
+
   const menu = [
     { name: "Dashboard", path: "/dashboard", icon: <LayoutDashboard size={18} /> },
     { name: "Projects", path: "/projects", icon: <Folder size={18} /> },
@@ -22,6 +26,14 @@ export default function Sidebar() {
 
         {menu.map((item, index) => {
           const isActive = location.pathname === item.path;
+
+          // ❗ Hide Projects & Operation PICs for developer
+          if (
+            user?.role === "developer" &&
+            (item.name === "Projects" || item.name === "Operation PICs")
+          ) {
+            return null;
+          }
 
           return (
             <li key={index}>

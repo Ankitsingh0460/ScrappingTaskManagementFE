@@ -8,9 +8,18 @@ export const AuthProvider = ({ children }) => {
   );
 
   const login = (data) => {
-    localStorage.setItem("token", data.token);   // 🔥 REQUIRED
-    localStorage.setItem("user", JSON.stringify(data.user));
-    setUser(data.user);
+    localStorage.setItem("token", data.token);
+
+    // ✅ Remove password before storing
+    const safeUser = {
+      _id: data.user._id,
+      name: data.user.name,
+      email: data.user.email,
+      role: data.user.role,
+    };
+
+    localStorage.setItem("user", JSON.stringify(safeUser));
+    setUser(safeUser);
   };
 
   const logout = () => {
