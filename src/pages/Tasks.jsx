@@ -137,12 +137,13 @@ export default function Tasks() {
 
   return (
     <div className="flex">
-      <Sidebar />
+  <div className="w-64 flex-shrink-0">
+    <Sidebar />
+  </div>
 
-      <div className="flex-1 bg-gray-100 min-h-screen">
-        <Header />
+<div className="flex-1 bg-gray-100 h-screen overflow-hidden flex flex-col">        <Header />
 
-        <div className="p-6">
+        <div className="p-4">
           <div className="flex justify-between mb-4">
             <h2 className="text-xl font-semibold">All Tasks</h2>
 
@@ -156,8 +157,7 @@ export default function Tasks() {
             )}
           </div>
 
-          <div className="bg-white rounded-xl shadow p-6 overflow-x-auto">
-            <table className="w-full text-sm">
+<div className="bg-white rounded-xl shadow p-4 overflow-x-auto overflow-y-visible">            <table className="w-full text-sm">
               <thead>
                 <tr className="bg-gray-100">
                   <th className="p-3">Crawler</th>
@@ -257,12 +257,22 @@ export default function Tasks() {
                             onClick={(e) => {
                               e.stopPropagation();
 
-                              const rect = e.currentTarget.getBoundingClientRect();
+                           const rect = e.currentTarget.getBoundingClientRect();
 
-                              setMenuPosition({
-                                x: rect.right,
-                                y: rect.bottom
-                              });
+const dropdownHeight = 150; // approx height of menu
+
+let top = rect.bottom;
+let left = rect.right;
+
+// 🔥 if no space at bottom → open upward
+if (window.innerHeight - rect.bottom < dropdownHeight) {
+  top = rect.top - dropdownHeight;
+}
+
+setMenuPosition({
+  x: left,
+  y: top
+});
 
                               setOpenMenu(openMenu === t._id ? null : t._id);
                             }}
