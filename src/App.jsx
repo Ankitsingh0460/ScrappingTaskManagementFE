@@ -7,6 +7,7 @@ import MyTasks from "./pages/MyTasks";
 import Users from "./pages/Users";
 import ProtectedRoute from "./routes/ProtectedRoute";
 import ForgotPassword from "./pages/ForgetPaassword";
+import TaskDetails from "./pages/TaskDetails";
 
 function App() {
   return (
@@ -19,6 +20,7 @@ function App() {
       <Route path="/my-tasks" element={<ProtectedRoute><MyTasks /></ProtectedRoute>} />
       <Route path="/users" element={<ProtectedRoute><Users /></ProtectedRoute>} />
       <Route path="/forgot-password" element={<ForgotPassword/>} />
+      <Route path="/tasks/:id" element={<TaskDetails />} />
     </Routes>
   );
 }

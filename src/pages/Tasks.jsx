@@ -3,15 +3,28 @@ import Header from "../components/Header";
 import { useEffect, useState } from "react";
 import axios from "../api/axios";
 import CreateTask from "./CreateTask";
+import { useNavigate } from "react-router-dom";
 
 export default function Tasks() {
   const [tasks, setTasks] = useState([]);
   const [showModal, setShowModal] = useState(false);
-const [openMenu, setOpenMenu] = useState(null);
+  const [openMenu, setOpenMenu] = useState(null);
+
+  // ✅ NEW (for floating menu position)
+  const [menuPosition, setMenuPosition] = useState({ x: 0, y: 0 });
+
   const user = JSON.parse(localStorage.getItem("user"));
+  const navigate = useNavigate();
 
   useEffect(() => {
     fetchTasks();
+  }, []);
+
+  // ✅ close on outside click
+  useEffect(() => {
+    const handleClick = () => setOpenMenu(null);
+    window.addEventListener("click", handleClick);
+    return () => window.removeEventListener("click", handleClick);
   }, []);
 
   const fetchTasks = async () => {
@@ -19,7 +32,6 @@ const [openMenu, setOpenMenu] = useState(null);
     setTasks(res.data);
   };
 
-  // FORMAT DATE
   const formatDate = (date) => {
     if (!date) return "-";
     const d = new Date(date);
@@ -28,36 +40,29 @@ const [openMenu, setOpenMenu] = useState(null);
     ).padStart(2, "0")}/${d.getFullYear()}`;
   };
 
-  // VERIFY
   const verifyTask = async (id) => {
     await axios.put(`/tasks/${id}/verify`);
     fetchTasks();
   };
 
-  // DELETE TASK
-const deleteTask = async (id) => {
-  const confirmDelete = confirm("Are you sure to delete this task?");
+  const deleteTask = async (id) => {
+    const confirmDelete = confirm("Are you sure to delete this task?");
+    if (!confirmDelete) return;
+    await axios.delete(`/tasks/${id}`);
+    fetchTasks();
+  };
 
-  if (!confirmDelete) return;
+  const editTask = async (task) => {
+    const name = prompt("Edit crawler name", task.crawlerName);
+    if (!name) return;
 
-  await axios.delete(`/tasks/${id}`);
-  fetchTasks();
-};
+    await axios.put(`/tasks/${task._id}`, {
+      crawlerName: name
+    });
 
-// EDIT TASK (simple version)
-const editTask = async (task) => {
-  const name = prompt("Edit crawler name", task.crawlerName);
+    fetchTasks();
+  };
 
-  if (!name) return;
-
-  await axios.put(`/tasks/${task._id}`, {
-    crawlerName: name
-  });
-
-  fetchTasks();
-};
-
-  // UPDATE PROGRESS
   const updateProgress = async (id, currentProgress) => {
     const progress = prompt(`Current: ${currentProgress}%. Enter new progress`);
     const note = prompt("Work done today");
@@ -79,10 +84,8 @@ const editTask = async (task) => {
     fetchTasks();
   };
 
-  // UPDATE SHEET
   const updateSheet = async (id) => {
     const url = prompt("Enter testing sheet URL");
-
     if (!url) return;
 
     await axios.put(`/tasks/${id}`, {
@@ -92,10 +95,8 @@ const editTask = async (task) => {
     fetchTasks();
   };
 
-  // STUCK
   const updateStuck = async (id) => {
     const reason = prompt("Enter stuck reason");
-
     if (!reason) return;
 
     await axios.put(`/tasks/${id}`, {
@@ -105,10 +106,26 @@ const editTask = async (task) => {
     fetchTasks();
   };
 
-  // 🔥 ADD PENALTY (ADMIN)
+  const addTesterComment = async (id) => {
+    const comment = prompt("Enter tester comment");
+    if (!comment) return;
+
+    await axios.put(`/tasks/${id}/tester-comment`, {
+      comment
+    });
+
+    fetchTasks();
+  };
+  useEffect(() => {
+  const handleEsc = (e) => {
+    if (e.key === "Escape") setOpenMenu(null);
+  };
+  window.addEventListener("keydown", handleEsc);
+  return () => window.removeEventListener("keydown", handleEsc);
+}, []);
+
   const addPenalty = async (id) => {
     const comment = prompt("Enter penalty comment");
-
     if (!comment) return;
 
     await axios.put(`/tasks/${id}/penalty`, {
@@ -126,8 +143,6 @@ const editTask = async (task) => {
         <Header />
 
         <div className="p-6">
-
-          {/* Header */}
           <div className="flex justify-between mb-4">
             <h2 className="text-xl font-semibold">All Tasks</h2>
 
@@ -142,9 +157,7 @@ const editTask = async (task) => {
           </div>
 
           <div className="bg-white rounded-xl shadow p-6 overflow-x-auto">
-
             <table className="w-full text-sm">
-
               <thead>
                 <tr className="bg-gray-100">
                   <th className="p-3">Crawler</th>
@@ -156,6 +169,7 @@ const editTask = async (task) => {
                   <th className="p-3">Status</th>
                   <th className="p-3">Stuck Reason</th>
                   <th className="p-3">Testing Sheet</th>
+                  <th className="p-3">Tester Comment</th>
                   <th className="p-3">Penalty</th>
                   <th className="p-3">Action</th>
                 </tr>
@@ -167,7 +181,6 @@ const editTask = async (task) => {
 
                   return (
                     <tr key={t._id} className="border-t hover:bg-gray-50">
-
                       <td className="p-3">{t.crawlerName}</td>
                       <td className="p-3">{t.developer?.name}</td>
                       <td className="p-3">{t.tester?.name}</td>
@@ -175,9 +188,10 @@ const editTask = async (task) => {
                       <td className="p-3">{formatDate(t.assignDate)}</td>
                       <td className="p-3">{formatDate(t.expectedCompletionDate)}</td>
 
-                      {/* Progress */}
-                      <td className="p-3 w-[120px]">
-
+                      <td
+                        className="p-3 w-[80px] cursor-pointer hover:bg-gray-50"
+                        onClick={() => navigate(`/tasks/${t._id}`)}
+                      >
                         <div className="bg-gray-200 h-1.5 rounded">
                           <div
                             className="bg-indigo-600 h-1.5 rounded"
@@ -192,163 +206,190 @@ const editTask = async (task) => {
                         <p className="text-xs text-gray-500 mt-1 break-words">
                           {lastLog?.note || "No update"}
                         </p>
-
                       </td>
 
                       <td className="p-3">
-  <span
-    className={`px-2 py-1 rounded text-xs font-semibold
-      ${
-        t.status === "completed"
-          ? "bg-green-100 text-green-600"
-          : t.status === "in_progress"
-          ? "bg-yellow-100 text-yellow-600"
-          : t.status === "testing"
-          ? "bg-blue-100 text-blue-600"
-          : t.status === "dev_done"
-          ? "bg-purple-100 text-purple-600"
-          : "bg-gray-100 text-gray-600"
-      }
-    `}
-  >
-    {t.status}
-  </span>
+                        <span className="px-2 py-1 rounded text-xs font-semibold">
+                          {t.status}
+                        </span>
+                      </td>
+
+               <td className="p-3 max-w-[120px] relative group cursor-pointer">
+  <div className="truncate">
+    {t.stuckReason || "-"}
+  </div>
+
+  {t.stuckReason && (
+    <div className="absolute left-0 bottom-full mb-2 hidden group-hover:block bg-gray-900 text-white text-xs p-2 rounded shadow-xl w-[220px] z-[9999] break-words">
+      {t.stuckReason}
+    </div>
+  )}
 </td>
 
-                      {/* Stuck */}
-                      <td
-                        className="p-3 max-w-[80px] truncate"
-                        title={t.stuckReason}
-                      >
-                        {t.stuckReason || "-"}
-                      </td>
-
-                      {/* Sheet */}
                       <td className="p-3">
                         {t.testingSheetUrl ? (
-                          <a
-                            href={t.testingSheetUrl}
-                            target="_blank"
-                            className="text-indigo-600 underline"
-                          >
+                          <a href={t.testingSheetUrl} target="_blank">
                             View
                           </a>
                         ) : "-"}
                       </td>
 
-                      {/* 🔥 Penalty Column */}
-                      <td
-                        className="p-3 max-w-[150px] break-words text-xs text-red-600"
-                        title={t.penaltyComment}
-                      >
+                      <td className="p-3 max-w-[150px] relative group cursor-pointer text-xs text-blue-600">
+  <div className="truncate">
+    {lastLog?.testerComment || "-"}
+  </div>
+
+  {lastLog?.testerComment && (
+    <div className="absolute left-0 bottom-full mb-2 hidden group-hover:block bg-gray-900 text-white text-xs p-2 rounded shadow-xl w-[240px] z-[9999] break-words">
+      {lastLog.testerComment}
+    </div>
+  )}
+</td>
+
+                      <td className="p-3 text-xs text-red-600">
                         {t.penaltyComment || "-"}
                       </td>
 
-                      {/* Actions */}
-                      <td className="p-3 flex flex-col gap-1">
+                      {/* ✅ ACTION BUTTON */}
+                      <td className="p-3">
+                        {(user?.role === "developer" || user?.role === "admin") && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
 
-                        {user?.role === "developer" && (
-                          <>
-                            <button
-                              onClick={() => updateProgress(t._id, t.progress || 0)}
-                              className="text-blue-600 text-xs"
-                            >
-                              Update Progress
-                            </button>
+                              const rect = e.currentTarget.getBoundingClientRect();
 
-                            <button
-                              onClick={() => updateSheet(t._id)}
-                              className="text-purple-600 text-xs"
-                            >
-                              Add Sheet
-                            </button>
+                              setMenuPosition({
+                                x: rect.right,
+                                y: rect.bottom
+                              });
 
-                            <button
-                              onClick={() => updateStuck(t._id)}
-                              className="text-red-600 text-xs"
-                            >
-                              Stuck
-                            </button>
-                          </>
+                              setOpenMenu(openMenu === t._id ? null : t._id);
+                            }}
+                            className="text-gray-600 text-lg px-2"
+                          >
+                            ⋮
+                          </button>
                         )}
 
-                        {/* 🔥 ADMIN ACTIONS */}
-    <td className="p-3 relative">
+                        {/* ✅ FLOATING DROPDOWN */}
+        {/* ✅ FLOATING DROPDOWN */}
+{openMenu === t._id && (
+  <div
+    onClick={(e) => e.stopPropagation()}
+    style={{
+      position: "fixed",
+      top: menuPosition.y + 5,   // ✅ IMPORTANT (you removed this)
+      left: menuPosition.x - 180
+    }}
+    className="w-[200px] bg-white border rounded-xl shadow-2xl z-[99999]"
+  >
 
-  {user?.role === "admin" && (
-    <>
-      {/* 🔥 THREE DOT BUTTON */}
-      <button
-        onClick={() =>
-          setOpenMenu(openMenu === t._id ? null : t._id)
-        }
-        className="text-gray-600 text-lg"
-      >
-        ⋮
-      </button>
+    {/* 👨‍💻 DEVELOPER */}
+    {user?.role === "developer" && (
+      <>
+        <button
+          onClick={() => {
+            updateProgress(t._id, t.progress || 0);
+            setOpenMenu(null);
+          }}
+          className="flex items-center gap-2 w-full px-4 py-2 text-sm hover:bg-gray-100 text-blue-600"
+        >
+          🔄 Update Progress
+        </button>
 
-      {/* 🔥 DROPDOWN */}
-      {openMenu === t._id && (
-<div className="absolute left-0 bottom-full mb-2 w-36 bg-white border rounded shadow z-50">          {t.status !== "completed" && (
-            <button
-              onClick={() => {
-                verifyTask(t._id);
-                setOpenMenu(null);
-              }}
-              className="block w-full text-left px-3 py-2 text-sm hover:bg-gray-100 text-green-600"
-            >
-              Verify
-            </button>
-          )}
+        <button
+          onClick={() => {
+            updateSheet(t._id);
+            setOpenMenu(null);
+          }}
+          className="flex items-center gap-2 w-full px-4 py-2 text-sm hover:bg-gray-100 text-purple-600"
+        >
+          📄 Testing Sheet
+        </button>
 
+        <button
+          onClick={() => {
+            addTesterComment(t._id);
+            setOpenMenu(null);
+          }}
+          className="flex items-center gap-2 w-full px-4 py-2 text-sm hover:bg-gray-100 text-indigo-600"
+        >
+          💬 Tester Comment
+        </button>
+
+        <button
+          onClick={() => {
+            updateStuck(t._id);
+            setOpenMenu(null);
+          }}
+          className="flex items-center gap-2 w-full px-4 py-2 text-sm hover:bg-gray-100 text-red-500"
+        >
+          ⚠️ Stuck
+        </button>
+
+        <div className="border-t"></div>
+      </>
+    )}
+
+    {/* 👑 ADMIN */}
+    {user?.role === "admin" && (
+      <>
+        {t.status !== "completed" && (
           <button
             onClick={() => {
-              addPenalty(t._id);
+              verifyTask(t._id);
               setOpenMenu(null);
             }}
-            className="block w-full text-left px-3 py-2 text-sm hover:bg-gray-100 text-red-600"
+            className="flex items-center gap-2 w-full px-4 py-2 text-sm hover:bg-gray-100 text-green-600"
           >
-            Add Penalty
+            ✅ Verify
           </button>
+        )}
 
-          <button
-            onClick={() => {
-              editTask(t);
-              setOpenMenu(null);
-            }}
-            className="block w-full text-left px-3 py-2 text-sm hover:bg-gray-100 text-yellow-600"
-          >
-            Edit
-          </button>
+        <button
+          onClick={() => {
+            addPenalty(t._id);
+            setOpenMenu(null);
+          }}
+          className="flex items-center gap-2 w-full px-4 py-2 text-sm hover:bg-gray-100 text-red-600"
+        >
+          🚫 Penalty
+        </button>
 
-          <button
-            onClick={() => {
-              deleteTask(t._id);
-              setOpenMenu(null);
-            }}
-            className="block w-full text-left px-3 py-2 text-sm hover:bg-gray-100 text-red-700"
-          >
-            Delete
-          </button>
+        <div className="border-t"></div>
 
-        </div>
-      )}
-    </>
-  )}
+        <button
+          onClick={() => {
+            editTask(t);
+            setOpenMenu(null);
+          }}
+          className="flex items-center gap-2 w-full px-4 py-2 text-sm hover:bg-gray-100 text-gray-700"
+        >
+          ✏️ Edit
+        </button>
 
-</td>
+        <button
+          onClick={() => {
+            deleteTask(t._id);
+            setOpenMenu(null);
+          }}
+          className="flex items-center gap-2 w-full px-4 py-2 text-sm hover:bg-gray-100 text-red-700"
+        >
+          🗑 Delete
+        </button>
+      </>
+    )}
 
+  </div>
+)}
                       </td>
-
                     </tr>
                   );
                 })}
               </tbody>
-
             </table>
-
           </div>
-
         </div>
       </div>
 
