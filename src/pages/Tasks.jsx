@@ -144,21 +144,26 @@ export default function Tasks() {
 <div className="flex-1 bg-gray-100 h-screen overflow-hidden flex flex-col">        <Header />
 
         <div className="p-4">
-          <div className="flex justify-between mb-4">
-            <h2 className="text-xl font-semibold">All Tasks</h2>
+          <div className="flex justify-between mb-3">
+            <h2 className="text-lg font-semibold">All Tasks</h2>
 
             {user?.role === "admin" && (
               <button
                 onClick={() => setShowModal(true)}
-                className="bg-indigo-600 text-white px-4 py-2 rounded-lg"
+                className="bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-indigo-700"
               >
                 + Create Task
               </button>
             )}
           </div>
 
-<div className="bg-white rounded-xl shadow p-4 overflow-x-auto overflow-y-visible">            <table className="w-full text-sm">
-              <thead>
+<div className="bg-white rounded-xl shadow p-4 overflow-x-auto">
+
+  {/* ✅ ONLY TABLE SCROLL */}
+ <div className="h-[calc(115vh-240px)] overflow-y-auto">
+
+    <table className="w-full text-sm border-collapse">
+              <thead className="sticky top-0 z-20 bg-gray-100">
                 <tr className="bg-gray-100">
                   <th className="p-3">Crawler</th>
                   <th className="p-3">Developer</th>
@@ -180,7 +185,17 @@ export default function Tasks() {
                   const lastLog = t.progressLogs?.slice(-1)[0];
 
                   return (
-                    <tr key={t._id} className="border-t hover:bg-gray-50">
+                    <tr
+  key={t._id}
+  className={`border-t hover:bg-gray-50
+    ${
+      new Date(t.expectedCompletionDate) < new Date() &&
+      t.status !== "completed"
+        ? "bg-red-100"
+        : ""
+    }
+  `}
+>
                       <td className="p-3">{t.crawlerName}</td>
                       <td className="p-3">{t.developer?.name}</td>
                       <td className="p-3">{t.tester?.name}</td>
@@ -399,6 +414,7 @@ setMenuPosition({
                 })}
               </tbody>
             </table>
+            </div>  
           </div>
         </div>
       </div>

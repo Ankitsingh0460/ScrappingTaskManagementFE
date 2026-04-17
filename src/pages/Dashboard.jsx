@@ -2,9 +2,11 @@ import Sidebar from "../components/Sidebar";
 import Header from "../components/Header";
 import { useEffect, useState } from "react";
 import axios from "../api/axios";
+import { useNavigate } from "react-router-dom"; // ✅ ADDED
 
 export default function Dashboard() {
   const [tasks, setTasks] = useState([]);
+  const navigate = useNavigate(); // ✅ ADDED
 
   useEffect(() => {
     fetchTasks();
@@ -33,25 +35,37 @@ export default function Dashboard() {
         <div className="grid grid-cols-4 gap-6 p-6">
 
           {/* Total */}
-          <div className="bg-gradient-to-r from-indigo-500 to-indigo-600 text-white p-5 rounded-xl shadow-lg">
+          <div
+            onClick={() => navigate("/tasks")}
+            className="cursor-pointer bg-gradient-to-r from-indigo-500 to-indigo-600 text-white p-5 rounded-xl shadow-lg hover:scale-[1.02] transition"
+          >
             <h3 className="text-sm opacity-80">Total Tasks</h3>
             <p className="text-3xl font-bold">{total}</p>
           </div>
 
           {/* Completed */}
-          <div className="bg-gradient-to-r from-green-500 to-green-600 text-white p-5 rounded-xl shadow-lg">
+          <div
+            onClick={() => navigate("/tasks?filter=completed")}
+            className="cursor-pointer bg-gradient-to-r from-green-500 to-green-600 text-white p-5 rounded-xl shadow-lg hover:scale-[1.02] transition"
+          >
             <h3 className="text-sm opacity-80">Completed</h3>
             <p className="text-3xl font-bold">{completed}</p>
           </div>
 
           {/* Overdue */}
-          <div className="bg-gradient-to-r from-red-500 to-red-600 text-white p-5 rounded-xl shadow-lg">
+          <div
+            onClick={() => navigate("/tasks?filter=overdue")}
+            className="cursor-pointer bg-gradient-to-r from-red-500 to-red-600 text-white p-5 rounded-xl shadow-lg hover:scale-[1.02] transition"
+          >
             <h3 className="text-sm opacity-80">Overdue</h3>
             <p className="text-3xl font-bold">{overdue}</p>
           </div>
 
           {/* In Progress */}
-          <div className="bg-gradient-to-r from-yellow-400 to-orange-500 text-white p-5 rounded-xl shadow-lg">
+          <div
+            onClick={() => navigate("/tasks?filter=in_progress")}
+            className="cursor-pointer bg-gradient-to-r from-yellow-400 to-orange-500 text-white p-5 rounded-xl shadow-lg hover:scale-[1.02] transition"
+          >
             <h3 className="text-sm opacity-80">In Progress</h3>
             <p className="text-3xl font-bold">{inProgress}</p>
           </div>

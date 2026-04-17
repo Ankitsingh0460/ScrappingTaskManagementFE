@@ -37,8 +37,7 @@ export default function CreateTask({ onClose, refresh }) {
   };
 
   return (
-    <div className="fixed inset-0 bg-black/30 flex items-center justify-center">
-
+<div className="fixed inset-0 z-[99999] flex items-center justify-center bg-black/40">
       <div className="bg-white p-6 rounded-xl w-[600px] shadow-lg">
 
         <h2 className="text-xl font-semibold mb-4">

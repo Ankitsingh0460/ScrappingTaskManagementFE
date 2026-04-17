@@ -5,12 +5,14 @@ export default function Header() {
   const { user, logout } = useContext(AuthContext);
 
   return (
-    <div className="flex justify-between items-center p-4 bg-white shadow">
+    <div className="flex justify-between items-center p-2 bg-white shadow">
       <h2>Dashboard</h2>
 
-      <div className="flex gap-4">
-        <span>{user?.email}</span>
-        <button onClick={logout}>Logout</button>
+      <div className="flex gap-4 justify-center items-center">
+        <span>Welcome {user?.name}</span>
+        <button className="bg-red-400 hover:bg-red-500 text-white py-2 px-2 rounded text-sm" onClick={logout}>
+          Logout
+        </button>
       </div>
     </div>
   );
