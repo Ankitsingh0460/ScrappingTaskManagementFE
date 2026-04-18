@@ -7,31 +7,36 @@ import Header from "../components/Header";
 export default function ChangePassword() {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState(""); // ✅ NEW
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState(""); // ✅ NEW
   const navigate = useNavigate();
 
-  const handleChange = async () => {
-    setError("");
+ const handleChange = async () => {
+  setError("");
 
-    if (!password || !confirmPassword) {
-      setError("Please fill all fields ❌");
-      return;
-    }
+  if (!password || !confirmPassword) {
+    setError("Please fill all fields ❌");
+    return;
+  }
 
-    if (password !== confirmPassword) {
-      setError("Passwords do not match ❌");
-      return;
-    }
+  if (password !== confirmPassword) {
+    setError("Passwords do not match ❌");
+    return;
+  }
 
-    try {
-      await axios.put("/auth/change-password", { password });
+  try {
+    setLoading(true); // ✅ start loading
 
-      alert("Password updated successfully");
-      navigate("/dashboard");
-    } catch (err) {
-      setError("Something went wrong ❌");
-    }
-  };
+    await axios.put("/auth/change-password", { password });
+
+    alert("Password updated successfully");
+    navigate("/dashboard");
+  } catch (err) {
+    setError("Something went wrong ❌");
+  } finally {
+    setLoading(false); // ✅ stop loading
+  }
+};
 
   return (
     <div className="flex">
@@ -77,12 +82,13 @@ export default function ChangePassword() {
               </p>
             )}
 
-            <button
-              onClick={handleChange}
-              className="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-2 rounded-lg"
-            >
-              Update Password
-            </button>
+           <button
+  onClick={handleChange}
+  disabled={loading}
+  className="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-2 rounded-lg disabled:opacity-50"
+>
+  {loading ? "Updating..." : "Update Password"}
+</button>
           </div>
 
         </div>
