@@ -12,6 +12,7 @@ export default function Tasks() {
 const [projects, setProjects] = useState([]);
 const [editTaskData, setEditTaskData] = useState(null);
 const [selectedProject, setSelectedProject] = useState("all");
+const [statusFilter, setStatusFilter] = useState("all");
   // ✅ NEW (for floating menu position)
   const [menuPosition, setMenuPosition] = useState({ x: 0, y: 0 });
 
@@ -171,12 +172,36 @@ const fetchProjects = async () => {
 <div className="flex-1 bg-gray-100 h-screen overflow-hidden flex flex-col">        <Header />
 
         <div className="p-4">
-         <div className="flex justify-between items-center mb-3">
-  <h2 className="text-lg font-semibold">All Tasks</h2>
+       <div className="flex justify-between items-center mb-3">
 
+  {/* 🔥 LEFT FILTERS */}
+  <div className="flex gap-2">
+
+    {[
+      { label: "All Task", value: "all" },
+      { label: "Completed", value: "completed" },
+      { label: "In Progress", value: "in-progress" },
+      { label: "Overdue", value: "overdue" }
+    ].map(btn => (
+      <button
+        key={btn.value}
+        onClick={() => setStatusFilter(btn.value)}
+        className={`px-3 py-1.5 text-sm rounded-lg border
+          ${statusFilter === btn.value
+            ? "bg-indigo-600 text-white"
+            : "bg-white text-gray-600 hover:bg-gray-100"
+          }`}
+      >
+        {btn.label}
+      </button>
+    ))}
+
+  </div>
+
+  {/* RIGHT SIDE (existing) */}
   <div className="flex items-center gap-2">
 
-    {/* ✅ FILTER */}
+    {/* PROJECT FILTER */}
     <select
       value={selectedProject}
       onChange={(e) => setSelectedProject(e.target.value)}
@@ -191,7 +216,7 @@ const fetchProjects = async () => {
       ))}
     </select>
 
-    {/* ✅ CREATE BUTTON */}
+    {/* CREATE BUTTON */}
     {user?.role === "admin" && (
       <button
         onClick={() => setShowModal(true)}
@@ -231,20 +256,35 @@ const fetchProjects = async () => {
               <tbody>
                 {tasks
 .filter(t => {
-  if (selectedProject === "all") return true;
+  // ✅ PROJECT FILTER
+  if (selectedProject !== "all") {
+    let taskProjectId =
+      typeof t.projectId === "object"
+        ? t.projectId._id
+        : t.projectId;
 
-  let taskProjectId;
-
-  // ✅ case 1: populated object
-  if (typeof t.projectId === "object" && t.projectId !== null) {
-    taskProjectId = t.projectId._id;
-  } 
-  // ✅ case 2: normal id
-  else {
-    taskProjectId = t.projectId;
+    if (String(taskProjectId) !== String(selectedProject)) {
+      return false;
+    }
   }
 
-  return String(taskProjectId) === String(selectedProject);
+  // ✅ STATUS FILTER
+  if (statusFilter === "completed") {
+    return t.status === "completed";
+  }
+
+  if (statusFilter === "in-progress") {
+    return t.status !== "completed";
+  }
+
+  if (statusFilter === "overdue") {
+    return (
+      new Date(t.expectedCompletionDate) < new Date() &&
+      t.status !== "completed"
+    );
+  }
+
+  return true; // total
 })
   .map(t => {
                   const lastLog = t.progressLogs?.slice(-1)[0];
