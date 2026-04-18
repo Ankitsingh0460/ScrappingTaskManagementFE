@@ -10,6 +10,7 @@ export default function Tasks() {
   const [showModal, setShowModal] = useState(false);
   const [openMenu, setOpenMenu] = useState(null);
 const [projects, setProjects] = useState([]);
+const [search, setSearch] = useState("");
 const [editTaskData, setEditTaskData] = useState(null);
 const [selectedProject, setSelectedProject] = useState("all");
 const [statusFilter, setStatusFilter] = useState("all");
@@ -163,6 +164,10 @@ const fetchProjects = async () => {
     fetchTasks();
   };
 
+  const sortedTasks = [...tasks].sort((a, b) => {
+  return new Date(b.createdAt || b._id) - new Date(a.createdAt || a._id);
+});
+
   return (
     <div className="flex">
   <div className="w-64 flex-shrink-0">
@@ -200,7 +205,13 @@ const fetchProjects = async () => {
 
   {/* RIGHT SIDE (existing) */}
   <div className="flex items-center gap-2">
-
+<input
+  type="text"
+  placeholder="Search crawler..."
+  value={search}
+  onChange={(e) => setSearch(e.target.value)}
+  className="border px-3 py-2 rounded-lg text-sm w-[220px] focus:outline-none focus:ring-2 focus:ring-indigo-400"
+/>
     {/* PROJECT FILTER */}
     <select
       value={selectedProject}
@@ -256,6 +267,14 @@ const fetchProjects = async () => {
               <tbody>
                 {tasks
 .filter(t => {
+
+  // ✅ SEARCH FILTER (ADD HERE — TOP)
+  if (search) {
+    if (!t.crawlerName?.toLowerCase().includes(search.toLowerCase())) {
+      return false;
+    }
+  }
+
   // ✅ PROJECT FILTER
   if (selectedProject !== "all") {
     let taskProjectId =
@@ -284,7 +303,7 @@ const fetchProjects = async () => {
     );
   }
 
-  return true; // total
+  return true;
 })
   .map(t => {
                   const lastLog = t.progressLogs?.slice(-1)[0];

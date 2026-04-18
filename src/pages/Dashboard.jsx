@@ -2,11 +2,11 @@ import Sidebar from "../components/Sidebar";
 import Header from "../components/Header";
 import { useEffect, useState } from "react";
 import axios from "../api/axios";
-import { useNavigate } from "react-router-dom"; // ✅ ADDED
+import { useNavigate } from "react-router-dom";
 
 export default function Dashboard() {
   const [tasks, setTasks] = useState([]);
-  const navigate = useNavigate(); // ✅ ADDED
+  const navigate = useNavigate();
 
   useEffect(() => {
     fetchTasks();
@@ -20,9 +20,51 @@ export default function Dashboard() {
   const total = tasks.length;
   const completed = tasks.filter(t => t.status === "completed").length;
   const overdue = tasks.filter(
-    t => new Date(t.expectedCompletionDate) < new Date() && t.status !== "completed"
+    t =>
+      new Date(t.expectedCompletionDate) < new Date() &&
+      t.status !== "completed"
   ).length;
   const inProgress = tasks.filter(t => t.status === "in_progress").length;
+
+  // ✅ NEW: Due status helper
+  const getDueStatus = (date) => {
+    if (!date) return null;
+
+    const today = new Date();
+    const dueDate = new Date(date);
+
+    const diffTime = dueDate - today;
+    const diffDays = diffTime / (1000 * 60 * 60 * 24);
+
+    if (diffDays < 0) return "overdue";
+    if (diffDays <= 2) return "dueSoon";
+
+    return "normal";
+  };
+
+  const sortedTasks = [...tasks].sort((a, b) => {
+  const getPriority = (task) => {
+    const status = getDueStatus(task.expectedCompletionDate);
+
+    if (status === "overdue") return 0;
+    if (status === "dueSoon") return 1;
+    return 2;
+  };
+
+  const priorityA = getPriority(a);
+  const priorityB = getPriority(b);
+
+  // Step 1: sort by priority
+  if (priorityA !== priorityB) {
+    return priorityA - priorityB;
+  }
+
+  // Step 2: sort by date inside same group
+  const dateA = new Date(a.expectedCompletionDate || 0);
+  const dateB = new Date(b.expectedCompletionDate || 0);
+
+  return dateA - dateB; // ascending (nearest first)
+});
 
   return (
     <div className="flex">
@@ -33,7 +75,6 @@ export default function Dashboard() {
 
         {/* Cards */}
         <div className="grid grid-cols-4 gap-6 p-6">
-
           {/* Total */}
           <div
             onClick={() => navigate("/tasks")}
@@ -69,7 +110,6 @@ export default function Dashboard() {
             <h3 className="text-sm opacity-80">In Progress</h3>
             <p className="text-3xl font-bold">{inProgress}</p>
           </div>
-
         </div>
 
         {/* Task Table */}
@@ -81,7 +121,6 @@ export default function Dashboard() {
             </h3>
 
             <table className="w-full border-collapse">
-
               <thead>
                 <tr className="bg-gray-100 text-left text-sm text-gray-600">
                   <th className="p-3">Crawler</th>
@@ -92,10 +131,18 @@ export default function Dashboard() {
               </thead>
 
               <tbody>
-                {tasks.map(task => (
+               {sortedTasks.map(task => (
                   <tr
                     key={task._id}
-                    className="border-t hover:bg-gray-50 transition"
+                    className={`border-t transition
+                      ${
+                        getDueStatus(task.expectedCompletionDate) === "overdue"
+                          ? "bg-red-50 hover:bg-red-100"
+                          : getDueStatus(task.expectedCompletionDate) === "dueSoon"
+                          ? "bg-yellow-50 hover:bg-yellow-100"
+                          : "hover:bg-gray-50"
+                      }
+                    `}
                   >
                     <td className="p-3 font-medium">
                       {task.crawlerName}
@@ -117,22 +164,44 @@ export default function Dashboard() {
                               : task.status === "testing"
                               ? "bg-blue-100 text-blue-600"
                               : "bg-gray-100 text-gray-600"
-                          }`}
+                          }
+                        `}
                       >
                         {task.status}
                       </span>
                     </td>
 
-                    <td className="p-3 text-sm text-gray-500">
-                      {task.expectedCompletionDate
-                        ? new Date(task.expectedCompletionDate).toDateString()
-                        : "-"}
+                    {/* ✅ Due Date Highlight */}
+                    <td className="p-3 text-sm font-medium">
+                      {task.expectedCompletionDate ? (
+                        <span
+                          className={`px-2 py-1 rounded-md text-xs font-semibold
+                            ${
+                              getDueStatus(task.expectedCompletionDate) === "overdue"
+                                ? "bg-red-100 text-red-500"
+                                : getDueStatus(task.expectedCompletionDate) === "dueSoon"
+                                ? "bg-yellow-100 text-yellow-600"
+                                : "text-gray-500"
+                            }
+                          `}
+                        >
+                          {new Date(
+                            task.expectedCompletionDate
+                          ).toDateString()}
+
+                          {getDueStatus(task.expectedCompletionDate) === "overdue" &&
+                            " ❌ Overdue"}
+                          {getDueStatus(task.expectedCompletionDate) === "dueSoon" &&
+                            " ⚠️ Due Soon"}
+                        </span>
+                      ) : (
+                        "-"
+                      )}
                     </td>
 
                   </tr>
                 ))}
               </tbody>
-
             </table>
 
           </div>
