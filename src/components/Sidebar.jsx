@@ -12,7 +12,8 @@ export default function Sidebar() {
     { name: "Dashboard", path: "/dashboard", icon: <LayoutDashboard size={18} /> },
     { name: "Projects", path: "/projects", icon: <Folder size={18} /> },
     { name: "Tasks", path: "/tasks", icon: <CheckSquare size={18} /> },
-    { name: "Operation PICs", path: "/users", icon: <Users size={18} /> }
+    { name: "Operation PICs", path: "/users", icon: <Users size={18} /> },
+    { name: "Change Password", path: "/change-password", icon: <Users size={18} /> }
   ];
 
   return (

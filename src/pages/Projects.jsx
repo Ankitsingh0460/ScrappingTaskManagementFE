@@ -24,6 +24,27 @@ export default function Projects() {
     fetchProjects();
   };
 
+  // ✅ NEW: Delete Project
+  const deleteProject = async (id) => {
+    const confirmDelete = confirm("Are you sure you want to delete this project?");
+    if (!confirmDelete) return;
+
+    await axios.delete(`/projects/${id}`);
+    fetchProjects();
+  };
+
+  // ✅ NEW: Edit Project
+  const editProject = async (project) => {
+    const newName = prompt("Edit project name", project.name);
+    if (!newName || !newName.trim()) return;
+
+    await axios.put(`/projects/${project._id}`, {
+      name: newName
+    });
+
+    fetchProjects();
+  };
+
   return (
     <div className="flex">
 
@@ -66,6 +87,9 @@ export default function Projects() {
               <thead>
                 <tr className="bg-gray-100 text-left text-sm text-gray-600">
                   <th className="p-3">Project Name</th>
+
+                  {/* ✅ NEW COLUMN */}
+                  <th className="p-3 w-[180px]">Actions</th>
                 </tr>
               </thead>
 
@@ -77,6 +101,25 @@ export default function Projects() {
                   >
                     <td className="p-3 font-medium">
                       {p.name}
+                    </td>
+
+                    {/* ✅ NEW ACTION BUTTONS */}
+                    <td className="p-3 flex gap-2">
+
+                   <button
+  onClick={() => editProject(p)}
+  className="text-xs px-2 py-1 rounded-md bg-blue-100 text-blue-600 hover:bg-blue-200"
+>
+  ✏️
+</button>
+
+<button
+  onClick={() => deleteProject(p._id)}
+  className="text-xs px-2 py-1 rounded-md bg-red-100 text-red-600 hover:bg-red-200"
+>
+  🗑
+</button>
+
                     </td>
                   </tr>
                 ))}

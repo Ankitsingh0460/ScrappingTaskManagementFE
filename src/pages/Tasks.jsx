@@ -9,16 +9,28 @@ export default function Tasks() {
   const [tasks, setTasks] = useState([]);
   const [showModal, setShowModal] = useState(false);
   const [openMenu, setOpenMenu] = useState(null);
-
+const [projects, setProjects] = useState([]);
+const [selectedProject, setSelectedProject] = useState("all");
   // ✅ NEW (for floating menu position)
   const [menuPosition, setMenuPosition] = useState({ x: 0, y: 0 });
 
   const user = JSON.parse(localStorage.getItem("user"));
   const navigate = useNavigate();
+const getProjectName = (projectId) => {
+  if (!projectId) return "-";
 
-  useEffect(() => {
-    fetchTasks();
-  }, []);
+  const id =
+    typeof projectId === "object"
+      ? projectId._id
+      : projectId;
+
+  const project = projects.find(p => String(p._id) === String(id));
+
+  return project ? project.name : "-";
+};
+  // useEffect(() => {
+  //   fetchTasks();
+  // }, []);
 
   // ✅ close on outside click
   useEffect(() => {
@@ -26,6 +38,16 @@ export default function Tasks() {
     window.addEventListener("click", handleClick);
     return () => window.removeEventListener("click", handleClick);
   }, []);
+
+  useEffect(() => {
+  fetchTasks();
+  fetchProjects(); // 👈 ADD THIS
+}, []);
+
+const fetchProjects = async () => {
+  const res = await axios.get("/projects");
+  setProjects(res.data);
+};
 
   const fetchTasks = async () => {
     const res = await axios.get("/tasks");
@@ -144,18 +166,38 @@ export default function Tasks() {
 <div className="flex-1 bg-gray-100 h-screen overflow-hidden flex flex-col">        <Header />
 
         <div className="p-4">
-          <div className="flex justify-between mb-3">
-            <h2 className="text-lg font-semibold">All Tasks</h2>
+         <div className="flex justify-between items-center mb-3">
+  <h2 className="text-lg font-semibold">All Tasks</h2>
 
-            {user?.role === "admin" && (
-              <button
-                onClick={() => setShowModal(true)}
-                className="bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-indigo-700"
-              >
-                + Create Task
-              </button>
-            )}
-          </div>
+  <div className="flex items-center gap-2">
+
+    {/* ✅ FILTER */}
+    <select
+      value={selectedProject}
+      onChange={(e) => setSelectedProject(e.target.value)}
+      className="border px-3 py-2 rounded-lg text-sm bg-white"
+    >
+      <option value="all">All Projects</option>
+
+      {projects.map((proj) => (
+        <option key={proj._id} value={proj._id}>
+          {proj.name}
+        </option>
+      ))}
+    </select>
+
+    {/* ✅ CREATE BUTTON */}
+    {user?.role === "admin" && (
+      <button
+        onClick={() => setShowModal(true)}
+        className="bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-indigo-700"
+      >
+        + Create Task
+      </button>
+    )}
+
+  </div>
+</div>
 
 <div className="bg-white rounded-xl shadow p-4 overflow-x-auto">
 
@@ -165,13 +207,14 @@ export default function Tasks() {
     <table className="w-full text-sm border-collapse">
               <thead className="sticky top-0 z-20 bg-gray-100">
                 <tr className="bg-gray-100">
-                  <th className="p-3">Crawler</th>
-                  <th className="p-3">Developer</th>
-                  <th className="p-3">Tester</th>
-                  <th className="p-3">Assign</th>
-                  <th className="p-3">Due</th>
-                  <th className="p-3">Progress</th>
-                  <th className="p-3">Status</th>
+             <th className="p-3 w-[140px] text-center">Crawler</th>
+<th className="p-3 w-[140px] text-center">Project</th>
+<th className="p-3 w-[140px] text-center">Developer</th>
+<th className="p-3 w-[140px] text-center">Tester</th>
+<th className="p-3 w-[120px] text-center">Assign</th>
+<th className="p-3 w-[120px] text-center">Due</th>
+<th className="p-3 w-[140px] text-center">Progress</th>
+<th className="p-3 w-[120px] text-center">Status</th>
                   <th className="p-3">Stuck Reason</th>
                   <th className="p-3">Testing Sheet</th>
                   <th className="p-3">Tester Comment</th>
@@ -181,7 +224,24 @@ export default function Tasks() {
               </thead>
 
               <tbody>
-                {tasks.map(t => {
+                {tasks
+.filter(t => {
+  if (selectedProject === "all") return true;
+
+  let taskProjectId;
+
+  // ✅ case 1: populated object
+  if (typeof t.projectId === "object" && t.projectId !== null) {
+    taskProjectId = t.projectId._id;
+  } 
+  // ✅ case 2: normal id
+  else {
+    taskProjectId = t.projectId;
+  }
+
+  return String(taskProjectId) === String(selectedProject);
+})
+  .map(t => {
                   const lastLog = t.progressLogs?.slice(-1)[0];
 
                   return (
@@ -196,12 +256,22 @@ export default function Tasks() {
     }
   `}
 >
-                      <td className="p-3">{t.crawlerName}</td>
-                      <td className="p-3">{t.developer?.name}</td>
-                      <td className="p-3">{t.tester?.name}</td>
+                     <td className="p-3 text-center">{t.crawlerName}</td>
+<td className="p-3 text-center relative group max-w-[140px]">
+  <div className="truncate">
+    {getProjectName(t.projectId)}
+  </div>
 
-                      <td className="p-3">{formatDate(t.assignDate)}</td>
-                      <td className="p-3">{formatDate(t.expectedCompletionDate)}</td>
+  {/* ✅ Hover Full Text */}
+  <div className="absolute hidden group-hover:block bottom-full mb-2 left-1/2 -translate-x-1/2 bg-gray-900 text-white text-xs p-2 rounded shadow-xl w-max max-w-[220px] z-[9999] break-words">
+    {getProjectName(t.projectId)}
+  </div>
+</td>
+
+<td className="p-3 text-center">{t.developer?.name}</td>
+<td className="p-3 text-center">{t.tester?.name}</td>
+<td className="p-3 text-center">{formatDate(t.assignDate)}</td>
+<td className="p-3 text-center">{formatDate(t.expectedCompletionDate)}</td>
 
                       <td
                         className="p-3 w-[80px] cursor-pointer hover:bg-gray-50"

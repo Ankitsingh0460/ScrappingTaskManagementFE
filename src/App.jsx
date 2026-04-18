@@ -8,12 +8,13 @@ import Users from "./pages/Users";
 import ProtectedRoute from "./routes/ProtectedRoute";
 import ForgotPassword from "./pages/ForgetPaassword";
 import TaskDetails from "./pages/TaskDetails";
+import ChangePassword from "./pages/ChangePassword";
 
 function App() {
   return (
     <Routes>
       <Route path="/" element={<Login />} />
-
+      <Route path="/login" element={<Login />} />
       <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
       <Route path="/projects" element={<ProtectedRoute><Projects /></ProtectedRoute>} />
       <Route path="/tasks" element={<ProtectedRoute><Tasks /></ProtectedRoute>} />
@@ -21,6 +22,7 @@ function App() {
       <Route path="/users" element={<ProtectedRoute><Users /></ProtectedRoute>} />
       <Route path="/forgot-password" element={<ForgotPassword/>} />
       <Route path="/tasks/:id" element={<TaskDetails />} />
+       <Route path="/change-password" element={<ChangePassword/>} />
     </Routes>
   );
 }

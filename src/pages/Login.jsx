@@ -7,7 +7,6 @@ export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
-  // 🔥 ADDED
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -28,6 +27,13 @@ export default function Login() {
 
       login(res.data);
 
+      // ✅ 🔥 FORCE PASSWORD CHANGE CHECK
+      if (res.data.forcePasswordChange) {
+        navigate("/change-password");
+        return;
+      }
+
+      // ✅ NORMAL FLOW
       if (res.data.user.role === "admin") {
         navigate("/dashboard");
       } else {
@@ -51,14 +57,12 @@ export default function Login() {
           Enter your credentials to access your account
         </p>
 
-        {/* 🔥 ERROR MESSAGE */}
         {error && (
           <p className="text-red-500 text-sm mb-4">{error}</p>
         )}
 
         <form onSubmit={handleSubmit}>
 
-          {/* Email */}
           <label className="block mb-1 text-sm font-medium">Email</label>
           <input
             type="email"
@@ -67,7 +71,6 @@ export default function Login() {
             onChange={(e) => setEmail(e.target.value)}
           />
 
-          {/* Password */}
           <label className="block mb-1 text-sm font-medium">Password</label>
           <input
             type="password"
@@ -76,14 +79,12 @@ export default function Login() {
             onChange={(e) => setPassword(e.target.value)}
           />
 
-          {/* Forgot */}
           <Link to="/forgot-password">
             <p className="text-indigo-600 text-sm mb-6 cursor-pointer">
               Forgot Password?
             </p>
           </Link>
 
-          {/* Login Button */}
           <button
             type="submit"
             disabled={loading}
