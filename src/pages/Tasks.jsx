@@ -10,6 +10,7 @@ export default function Tasks() {
   const [showModal, setShowModal] = useState(false);
   const [openMenu, setOpenMenu] = useState(null);
 const [projects, setProjects] = useState([]);
+const [editTaskData, setEditTaskData] = useState(null);
 const [selectedProject, setSelectedProject] = useState("all");
   // ✅ NEW (for floating menu position)
   const [menuPosition, setMenuPosition] = useState({ x: 0, y: 0 });
@@ -74,16 +75,20 @@ const fetchProjects = async () => {
     fetchTasks();
   };
 
-  const editTask = async (task) => {
-    const name = prompt("Edit crawler name", task.crawlerName);
-    if (!name) return;
+  // const editTask = async (task) => {
+  //   const name = prompt("Edit crawler name", task.crawlerName);
+  //   if (!name) return;
 
-    await axios.put(`/tasks/${task._id}`, {
-      crawlerName: name
-    });
+  //   await axios.put(`/tasks/${task._id}`, {
+  //     crawlerName: name
+  //   });
 
-    fetchTasks();
-  };
+  //   fetchTasks();
+  // };
+  const editTask = (task) => {
+  setEditTaskData(task);
+  setShowModal(true);
+};
 
   const updateProgress = async (id, currentProgress) => {
     const progress = prompt(`Current: ${currentProgress}%. Enter new progress`);
@@ -490,11 +495,15 @@ setMenuPosition({
       </div>
 
       {showModal && (
-        <CreateTask
-          onClose={() => setShowModal(false)}
-          refresh={fetchTasks}
-        />
-      )}
+  <CreateTask
+    onClose={() => {
+      setShowModal(false);
+      setEditTaskData(null);
+    }}
+    refresh={fetchTasks}
+    editTaskData={editTaskData}
+  />
+)}
     </div>
   );
 }

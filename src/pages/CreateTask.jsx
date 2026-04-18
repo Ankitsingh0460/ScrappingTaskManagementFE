@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import axios from "../api/axios";
 
-export default function CreateTask({ onClose, refresh }) {
+export default function CreateTask({ onClose, refresh, editTaskData }) {
   const [form, setForm] = useState({
     crawlerName: "",
     projectId: "",
@@ -19,6 +19,25 @@ export default function CreateTask({ onClose, refresh }) {
     fetchData();
   }, []);
 
+  // ✅ PREFILL FOR EDIT
+  useEffect(() => {
+    if (editTaskData) {
+      setForm({
+        crawlerName: editTaskData.crawlerName || "",
+        projectId:
+          typeof editTaskData.projectId === "object"
+            ? editTaskData.projectId._id
+            : editTaskData.projectId || "",
+        developer: editTaskData.developer?._id || "",
+        tester: editTaskData.tester?._id || "",
+        assignDate: editTaskData.assignDate?.slice(0, 10) || "",
+        expectedCompletionDate:
+          editTaskData.expectedCompletionDate?.slice(0, 10) || "",
+        testingSheetUrl: editTaskData.testingSheetUrl || ""
+      });
+    }
+  }, [editTaskData]);
+
   const fetchData = async () => {
     const usersRes = await axios.get("/users");
     const projectRes = await axios.get("/projects");
@@ -30,33 +49,44 @@ export default function CreateTask({ onClose, refresh }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    await axios.post("/tasks", form);
+    // ✅ CREATE OR UPDATE
+    if (editTaskData) {
+      await axios.put(`/tasks/${editTaskData._id}`, form);
+    } else {
+      await axios.post("/tasks", form);
+    }
 
-    refresh();   // reload tasks
-    onClose();   // close modal
+    refresh();
+    onClose();
   };
 
   return (
-<div className="fixed inset-0 z-[99999] flex items-center justify-center bg-black/40">
+    <div className="fixed inset-0 z-[99999] flex items-center justify-center bg-black/40">
       <div className="bg-white p-6 rounded-xl w-[600px] shadow-lg">
 
         <h2 className="text-xl font-semibold mb-4">
-          Create Task
+          {editTaskData ? "Edit Task" : "Create Task"}
         </h2>
 
         <form className="grid grid-cols-2 gap-4" onSubmit={handleSubmit}>
 
           {/* Crawler Name */}
           <input
+            value={form.crawlerName}
             placeholder="Crawler Name"
             className="col-span-2 p-3 border rounded"
-            onChange={(e) => setForm({ ...form, crawlerName: e.target.value })}
+            onChange={(e) =>
+              setForm({ ...form, crawlerName: e.target.value })
+            }
           />
 
           {/* Project */}
           <select
+            value={form.projectId}
             className="p-3 border rounded"
-            onChange={(e) => setForm({ ...form, projectId: e.target.value })}
+            onChange={(e) =>
+              setForm({ ...form, projectId: e.target.value })
+            }
           >
             <option>Select Project</option>
             {projects.map(p => (
@@ -68,8 +98,11 @@ export default function CreateTask({ onClose, refresh }) {
 
           {/* Developer */}
           <select
+            value={form.developer}
             className="p-3 border rounded"
-            onChange={(e) => setForm({ ...form, developer: e.target.value })}
+            onChange={(e) =>
+              setForm({ ...form, developer: e.target.value })
+            }
           >
             <option>Select Developer</option>
             {users
@@ -83,12 +116,15 @@ export default function CreateTask({ onClose, refresh }) {
 
           {/* Tester */}
           <select
+            value={form.tester}
             className="p-3 border rounded"
-            onChange={(e) => setForm({ ...form, tester: e.target.value })}
+            onChange={(e) =>
+              setForm({ ...form, tester: e.target.value })
+            }
           >
             <option>Select Tester</option>
             {users
-              .filter(u => u.role === "developer")
+              .filter(u => u.role === "developer") // ✅ FIXED
               .map(u => (
                 <option key={u._id} value={u._id}>
                   {u.name}
@@ -99,24 +135,28 @@ export default function CreateTask({ onClose, refresh }) {
           {/* Assign Date */}
           <input
             type="date"
-            placeholder="Assign Date"
+            value={form.assignDate}
             className="p-3 border rounded"
-            onChange={(e) => setForm({ ...form, assignDate: e.target.value })}
+            onChange={(e) =>
+              setForm({ ...form, assignDate: e.target.value })
+            }
           />
 
           {/* Due Date */}
           <input
             type="date"
-            placeholder="Due Date"
+            value={form.expectedCompletionDate}
             className="p-3 border rounded"
             onChange={(e) =>
-              setForm({ ...form, expectedCompletionDate: e.target.value })
+              setForm({
+                ...form,
+                expectedCompletionDate: e.target.value
+              })
             }
           />
 
           {/* Buttons */}
           <div className="col-span-2 flex justify-end gap-3 mt-4">
-
             <button
               type="button"
               onClick={onClose}
@@ -129,13 +169,11 @@ export default function CreateTask({ onClose, refresh }) {
               type="submit"
               className="px-4 py-2 bg-indigo-600 text-white rounded"
             >
-              Create
+              {editTaskData ? "Update" : "Create"}
             </button>
-
           </div>
 
         </form>
-
       </div>
     </div>
   );
