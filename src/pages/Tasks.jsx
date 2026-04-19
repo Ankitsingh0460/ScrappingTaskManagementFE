@@ -9,28 +9,25 @@ export default function Tasks() {
   const [tasks, setTasks] = useState([]);
   const [showModal, setShowModal] = useState(false);
   const [openMenu, setOpenMenu] = useState(null);
-const [projects, setProjects] = useState([]);
-const [search, setSearch] = useState("");
-const [editTaskData, setEditTaskData] = useState(null);
-const [selectedProject, setSelectedProject] = useState("all");
-const [statusFilter, setStatusFilter] = useState("all");
+  const [projects, setProjects] = useState([]);
+  const [search, setSearch] = useState("");
+  const [editTaskData, setEditTaskData] = useState(null);
+  const [selectedProject, setSelectedProject] = useState("all");
+  const [statusFilter, setStatusFilter] = useState("all");
   // ✅ NEW (for floating menu position)
   const [menuPosition, setMenuPosition] = useState({ x: 0, y: 0 });
 
   const user = JSON.parse(localStorage.getItem("user"));
   const navigate = useNavigate();
-const getProjectName = (projectId) => {
-  if (!projectId) return "-";
+  const getProjectName = (projectId) => {
+    if (!projectId) return "-";
 
-  const id =
-    typeof projectId === "object"
-      ? projectId._id
-      : projectId;
+    const id = typeof projectId === "object" ? projectId._id : projectId;
 
-  const project = projects.find(p => String(p._id) === String(id));
+    const project = projects.find((p) => String(p._id) === String(id));
 
-  return project ? project.name : "-";
-};
+    return project ? project.name : "-";
+  };
   // useEffect(() => {
   //   fetchTasks();
   // }, []);
@@ -43,14 +40,14 @@ const getProjectName = (projectId) => {
   }, []);
 
   useEffect(() => {
-  fetchTasks();
-  fetchProjects(); // 👈 ADD THIS
-}, []);
+    fetchTasks();
+    fetchProjects(); // 👈 ADD THIS
+  }, []);
 
-const fetchProjects = async () => {
-  const res = await axios.get("/projects");
-  setProjects(res.data);
-};
+  const fetchProjects = async () => {
+    const res = await axios.get("/projects");
+    setProjects(res.data);
+  };
 
   const fetchTasks = async () => {
     const res = await axios.get("/tasks");
@@ -61,7 +58,7 @@ const fetchProjects = async () => {
     if (!date) return "-";
     const d = new Date(date);
     return `${String(d.getDate()).padStart(2, "0")}/${String(
-      d.getMonth() + 1
+      d.getMonth() + 1,
     ).padStart(2, "0")}/${d.getFullYear()}`;
   };
 
@@ -88,9 +85,9 @@ const fetchProjects = async () => {
   //   fetchTasks();
   // };
   const editTask = (task) => {
-  setEditTaskData(task);
-  setShowModal(true);
-};
+    setEditTaskData(task);
+    setShowModal(true);
+  };
 
   const updateProgress = async (id, currentProgress) => {
     const progress = prompt(`Current: ${currentProgress}%. Enter new progress`);
@@ -107,7 +104,7 @@ const fetchProjects = async () => {
 
     await axios.put(`/tasks/${id}/progress`, {
       progress: newProgress,
-      note
+      note,
     });
 
     fetchTasks();
@@ -118,7 +115,7 @@ const fetchProjects = async () => {
     if (!url) return;
 
     await axios.put(`/tasks/${id}`, {
-      testingSheetUrl: url
+      testingSheetUrl: url,
     });
 
     fetchTasks();
@@ -129,7 +126,7 @@ const fetchProjects = async () => {
     if (!reason) return;
 
     await axios.put(`/tasks/${id}`, {
-      stuckReason: reason
+      stuckReason: reason,
     });
 
     fetchTasks();
@@ -140,477 +137,488 @@ const fetchProjects = async () => {
     if (!comment) return;
 
     await axios.put(`/tasks/${id}/tester-comment`, {
-      comment
+      comment,
     });
 
     fetchTasks();
   };
   useEffect(() => {
-  const handleEsc = (e) => {
-    if (e.key === "Escape") setOpenMenu(null);
-  };
-  window.addEventListener("keydown", handleEsc);
-  return () => window.removeEventListener("keydown", handleEsc);
-}, []);
+    const handleEsc = (e) => {
+      if (e.key === "Escape") setOpenMenu(null);
+    };
+    window.addEventListener("keydown", handleEsc);
+    return () => window.removeEventListener("keydown", handleEsc);
+  }, []);
 
   const addPenalty = async (id) => {
     const comment = prompt("Enter penalty comment");
     if (!comment) return;
 
     await axios.put(`/tasks/${id}/penalty`, {
-      comment
+      comment,
     });
 
     fetchTasks();
   };
 
   const sortedTasks = [...tasks].sort((a, b) => {
-  return new Date(b.createdAt || b._id) - new Date(a.createdAt || a._id);
-});
+    return new Date(b.createdAt || b._id) - new Date(a.createdAt || a._id);
+  });
 
-// ✅ ADD THIS BELOW useNavigate()
-const getDueStatus = (task) => {
-  if (!task?.expectedCompletionDate) return null;
+  // ✅ ADD THIS BELOW useNavigate()
+  const getDueStatus = (task) => {
+    if (!task?.expectedCompletionDate) return null;
 
-  if (task.status === "completed") return "completed";
+    if (task.status === "completed") return "completed";
 
-  const today = new Date();
-  const dueDate = new Date(task.expectedCompletionDate);
+    const today = new Date();
+    const dueDate = new Date(task.expectedCompletionDate);
 
-  // ✅ remove time
-  today.setHours(0, 0, 0, 0);
-  dueDate.setHours(0, 0, 0, 0);
+    today.setHours(0, 0, 0, 0);
+    dueDate.setHours(0, 0, 0, 0);
 
-  const diffTime = dueDate - today;
-  const diffDays = diffTime / (1000 * 60 * 60 * 24);
+    const diffTime = dueDate - today;
+    const diffDays = diffTime / (1000 * 60 * 60 * 24);
 
-  if (diffDays < 0) return "overdue";
-  if (diffDays === 0) return "today";   // ⭐ NEW
-  if (diffDays <= 2) return "dueSoon";
+    if (diffDays < 0) return "overdue";
+    if (diffDays === 0) return "today";
+    if (diffDays === 1) return "tomorrow";
 
-  return "normal";
-};
+    if (diffDays <= 2) return "dueSoon"; // ✅ FIXED (moved up)
+    if (diffDays <= 7) return "week"; // ✅ after dueSoon
+
+    return "normal";
+  };
 
   return (
     <div className="flex">
-  <div className="w-64 flex-shrink-0">
-    <Sidebar />
-  </div>
+      <div className="w-64 flex-shrink-0">
+        <Sidebar />
+      </div>
 
-<div className="flex-1 bg-gray-100 h-screen overflow-hidden flex flex-col">        <Header />
-
+      <div className="flex-1 bg-gray-100 h-screen overflow-hidden flex flex-col">
+        {" "}
+        <Header />
         <div className="p-4">
-       <div className="flex justify-between items-center mb-3">
+          <div className="flex justify-between items-center mb-3">
+            {/* LEFT SIDE (Search + Filters) */}
+            <div className="flex items-center gap-2">
+              {/* STATUS FILTER */}
+              {/* PROJECT FILTER */}
+              <select
+                value={selectedProject}
+                onChange={(e) => setSelectedProject(e.target.value)}
+                className="border px-3 py-2 rounded-lg text-sm bg-white"
+              >
+                <option value="all">All Projects</option>
+                {projects.map((proj) => (
+                  <option key={proj._id} value={proj._id}>
+                    {proj.name}
+                  </option>
+                ))}
+              </select>
+              <select
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+                className="border px-3 py-2 rounded-lg text-sm bg-white"
+              >
+                <option value="all">All Task</option>
+                <option value="completed">Completed</option>
+                <option value="in-progress">In Progress</option>
+                <option value="overdue">Overdue</option>
+                <option value="today">Today Due</option>
+                <option value="tomorrow">Tomorrow Due</option>
+                <option value="week">This Week Due</option>
+              </select>
 
-  {/* 🔥 LEFT FILTERS */}
-  <div className="flex gap-2">
+              <input
+                type="text"
+                placeholder="Search crawler..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="border px-3 py-2 rounded-lg text-sm w-[220px] focus:outline-none focus:ring-2 focus:ring-indigo-400"
+              />
+            </div>
 
-    {[
-  { label: "All Task", value: "all" },
-  { label: "Completed", value: "completed" },
-  { label: "In Progress", value: "in-progress" },
-  { label: "Overdue", value: "overdue" },
-  { label: "Today Due", value: "today" } // ⭐ ADD THIS
-].map(btn => (
-      <button
-        key={btn.value}
-        onClick={() => setStatusFilter(btn.value)}
-        className={`px-3 py-1.5 text-sm rounded-lg border
-          ${statusFilter === btn.value
-            ? "bg-indigo-600 text-white"
-            : "bg-white text-gray-600 hover:bg-gray-100"
-          }`}
-      >
-        {btn.label}
-      </button>
-    ))}
+            {/* RIGHT SIDE (Create Button) */}
+            {user?.role === "admin" && (
+              <button
+                onClick={() => setShowModal(true)}
+                className="bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-indigo-700"
+              >
+                + Create Task
+              </button>
+            )}
+          </div>
 
-  </div>
+          <div className="bg-white rounded-xl shadow p-4 overflow-x-auto">
+            {/* ✅ ONLY TABLE SCROLL */}
+            <div className="h-[calc(115vh-240px)] overflow-y-auto">
+              <table className="w-full text-sm border-collapse">
+                <thead className="sticky top-0 z-20 bg-gray-100">
+                  <tr className="bg-gray-100">
+                    <th className="p-3 w-[140px] text-center">Crawler</th>
+                    <th className="p-3 w-[140px] text-center">Project</th>
+                    <th className="p-3 w-[140px] text-center">Developer</th>
+                    <th className="p-3 w-[140px] text-center">Tester</th>
+                    <th className="p-3 w-[120px] text-center">Assign</th>
+                    <th className="p-3 w-[120px] text-center">Due</th>
+                    <th className="p-3 w-[140px] text-center">Progress</th>
+                    <th className="p-3 w-[120px] text-center">Status</th>
+                    <th className="p-3">Stuck Reason</th>
+                    <th className="p-3">Testing Sheet</th>
+                    <th className="p-3">Tester Comment</th>
+                    <th className="p-3">Penalty</th>
+                    <th className="p-3">Action</th>
+                  </tr>
+                </thead>
 
-  {/* RIGHT SIDE (existing) */}
-  <div className="flex items-center gap-2">
-<input
-  type="text"
-  placeholder="Search crawler..."
-  value={search}
-  onChange={(e) => setSearch(e.target.value)}
-  className="border px-3 py-2 rounded-lg text-sm w-[220px] focus:outline-none focus:ring-2 focus:ring-indigo-400"
-/>
-    {/* PROJECT FILTER */}
-    <select
-      value={selectedProject}
-      onChange={(e) => setSelectedProject(e.target.value)}
-      className="border px-3 py-2 rounded-lg text-sm bg-white"
-    >
-      <option value="all">All Projects</option>
+                <tbody>
+                  {tasks
+                    .filter((t) => {
+                      // ✅ SEARCH FILTER (ADD HERE — TOP)
+                      if (search) {
+                        if (
+                          !t.crawlerName
+                            ?.toLowerCase()
+                            .includes(search.toLowerCase())
+                        ) {
+                          return false;
+                        }
+                      }
 
-      {projects.map((proj) => (
-        <option key={proj._id} value={proj._id}>
-          {proj.name}
-        </option>
-      ))}
-    </select>
+                      // ✅ PROJECT FILTER
+                      if (selectedProject !== "all") {
+                        let taskProjectId =
+                          typeof t.projectId === "object"
+                            ? t.projectId._id
+                            : t.projectId;
 
-    {/* CREATE BUTTON */}
-    {user?.role === "admin" && (
-      <button
-        onClick={() => setShowModal(true)}
-        className="bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-indigo-700"
-      >
-        + Create Task
-      </button>
-    )}
+                        if (String(taskProjectId) !== String(selectedProject)) {
+                          return false;
+                        }
+                      }
 
-  </div>
-</div>
+                      // ✅ STATUS FILTER
+                      if (statusFilter === "completed") {
+                        return t.status === "completed";
+                      }
 
-<div className="bg-white rounded-xl shadow p-4 overflow-x-auto">
+                      if (statusFilter === "in-progress") {
+                        return t.status !== "completed";
+                      }
 
-  {/* ✅ ONLY TABLE SCROLL */}
- <div className="h-[calc(115vh-240px)] overflow-y-auto">
+                      if (statusFilter === "overdue") {
+                        return getDueStatus(t) === "overdue";
+                      }
 
-    <table className="w-full text-sm border-collapse">
-              <thead className="sticky top-0 z-20 bg-gray-100">
-                <tr className="bg-gray-100">
-             <th className="p-3 w-[140px] text-center">Crawler</th>
-<th className="p-3 w-[140px] text-center">Project</th>
-<th className="p-3 w-[140px] text-center">Developer</th>
-<th className="p-3 w-[140px] text-center">Tester</th>
-<th className="p-3 w-[120px] text-center">Assign</th>
-<th className="p-3 w-[120px] text-center">Due</th>
-<th className="p-3 w-[140px] text-center">Progress</th>
-<th className="p-3 w-[120px] text-center">Status</th>
-                  <th className="p-3">Stuck Reason</th>
-                  <th className="p-3">Testing Sheet</th>
-                  <th className="p-3">Tester Comment</th>
-                  <th className="p-3">Penalty</th>
-                  <th className="p-3">Action</th>
-                </tr>
-              </thead>
+                      if (statusFilter === "today") {
+                        return getDueStatus(t) === "today";
+                      }
+                      if (statusFilter === "tomorrow") {
+                        return getDueStatus(t) === "tomorrow"; // ✅ NEW
+                      }
 
-              <tbody>
-                {tasks
-.filter(t => {
+                      if (statusFilter === "week") {
+                        return getDueStatus(t) === "week"; // ✅ NEW
+                      }
 
-  // ✅ SEARCH FILTER (ADD HERE — TOP)
-  if (search) {
-    if (!t.crawlerName?.toLowerCase().includes(search.toLowerCase())) {
-      return false;
-    }
-  }
-
-  // ✅ PROJECT FILTER
-  if (selectedProject !== "all") {
-    let taskProjectId =
-      typeof t.projectId === "object"
-        ? t.projectId._id
-        : t.projectId;
-
-    if (String(taskProjectId) !== String(selectedProject)) {
-      return false;
-    }
-  }
-
-  // ✅ STATUS FILTER
-  if (statusFilter === "completed") {
-    return t.status === "completed";
-  }
-
-  if (statusFilter === "in-progress") {
-    return t.status !== "completed";
-  }
-
- if (statusFilter === "overdue") {
-  return getDueStatus(t) === "overdue";
-}
-
-if (statusFilter === "today") {
-  return getDueStatus(t) === "today";
-}
-
-  return true;
-})
-  .map(t => {
-                  const lastLog = t.progressLogs?.slice(-1)[0];
-                 const dueStatus = getDueStatus(t);
-                  return (
-                    <tr
-  key={t._id}
-  className={`border-t hover:bg-gray-50
-    ${
-      dueStatus === "overdue"
-        ? ""
-        : dueStatus === "today"
-        ? ""
-        : ""
-    }
+                      return true;
+                    })
+                    .map((t) => {
+                      const lastLog = t.progressLogs?.slice(-1)[0];
+                      const dueStatus = getDueStatus(t);
+                      return (
+                        <tr
+                          key={t._id}
+                          className={`border-t hover:bg-gray-50
+    ${dueStatus === "overdue" ? "" : dueStatus === "today" ? "" : ""}
   `}
->
-                     <td className="p-3 text-center">{t.crawlerName}</td>
-<td className="p-3 text-center relative group max-w-[140px]">
-  <div className="truncate">
-    {getProjectName(t.projectId)}
-  </div>
+                        >
+                          <td className="p-3 text-center">{t.crawlerName}</td>
+                          <td className="p-3 text-center relative group max-w-[140px]">
+                            <div className="truncate">
+                              {getProjectName(t.projectId)}
+                            </div>
 
-  {/* ✅ Hover Full Text */}
-  <div className="absolute hidden group-hover:block bottom-full mb-2 left-1/2 -translate-x-1/2 bg-gray-900 text-white text-xs p-2 rounded shadow-xl w-max max-w-[220px] z-[9999] break-words">
-    {getProjectName(t.projectId)}
-  </div>
-</td>
+                            {/* ✅ Hover Full Text */}
+                            <div className="absolute hidden group-hover:block bottom-full mb-2 left-1/2 -translate-x-1/2 bg-gray-900 text-white text-xs p-2 rounded shadow-xl w-max max-w-[220px] z-[9999] break-words">
+                              {getProjectName(t.projectId)}
+                            </div>
+                          </td>
 
-<td className="p-3 text-center">{t.developer?.name}</td>
-<td className="p-3 text-center">{t.tester?.name}</td>
-<td className="p-3 text-center">{formatDate(t.assignDate)}</td>
-<td className="p-3 text-center">
-  {t.expectedCompletionDate ? (
-    <span
-      className={`px-2 py-1 rounded text-xs font-semibold flex items-center justify-center inline-block
-        ${
-          getDueStatus(t) === "overdue"
-            ? "bg-red-100 text-red-600"
-            : getDueStatus(t) === "today"
-            ? "bg-orange-100 text-orange-600"
-            : getDueStatus(t) === "dueSoon"
+                          <td className="p-3 text-center">
+                            {t.developer?.name}
+                          </td>
+                          <td className="p-3 text-center">{t.tester?.name}</td>
+                          <td className="p-3 text-center">
+                            {formatDate(t.assignDate)}
+                          </td>
+                          <td className="p-3 text-center">
+                            {t.expectedCompletionDate ? (
+                              <span
+                                className={`px-2 py-1 rounded text-xs font-semibold flex items-center justify-center inline-block
+  ${
+    getDueStatus(t) === "overdue"
+      ? "bg-red-100 text-red-600"
+      : getDueStatus(t) === "today"
+        ? "bg-orange-100 text-orange-600"
+        : getDueStatus(t) === "tomorrow"
+          ? "bg-yellow-100 text-yellow-600" // ✅ NEW
+          : getDueStatus(t) === "dueSoon"
             ? "bg-blue-100 text-blue-600"
-            : "text-gray-500"
-        }
-      `}
-    >
-      {formatDate(t.expectedCompletionDate)}
+            : getDueStatus(t) === "week"
+              ? "bg-purple-100 text-purple-600" // ✅ NEW
+              : "text-gray-500"
+  }
+`}
+                              >
+                                {formatDate(t.expectedCompletionDate)}
+                                {getDueStatus(t) === "overdue" && " Overdue"}
+                                {getDueStatus(t) === "today" && " Today"}
+                                {getDueStatus(t) === "tomorrow" &&
+                                  " Tomorrow"}{" "}
+                                {getDueStatus(t) === "dueSoon" && " Due Soon"}
+                                {getDueStatus(t) === "week" && " This Week"}
+                              </span>
+                            ) : (
+                              "-"
+                            )}
+                          </td>
 
-      {getDueStatus(t) === "overdue" && "  Overdue"}
-      {getDueStatus(t) === "today" && "  Today"}
-      {getDueStatus(t) === "dueSoon" && "  Due Soon"}
-    </span>
-  ) : "-"}
-</td>
-
-                      <td
-                        className="p-3 w-[80px] cursor-pointer hover:bg-gray-50"
-                        onClick={() => navigate(`/tasks/${t._id}`)}
-                      >
-                        <div className="bg-gray-200 h-1.5 rounded">
-                          <div
-                            className="bg-indigo-600 h-1.5 rounded"
-                            style={{ width: `${t.progress || 0}%` }}
-                          ></div>
-                        </div>
-
-                        <span className="text-[10px] text-gray-600">
-                          {t.progress}%
-                        </span>
-
-                        <p className="text-xs text-gray-500 mt-1 break-words">
-                          {lastLog?.note || "No update"}
-                        </p>
-                      </td>
-
-                      <td className="p-3">
-                        <span className="px-2 py-1 rounded text-xs font-semibold">
-                          {t.status}
-                        </span>
-                      </td>
-
-               <td className="p-3 max-w-[120px] relative group cursor-pointer">
-  <div className="truncate">
-    {t.stuckReason || "-"}
-  </div>
-
-  {t.stuckReason && (
-    <div className="absolute left-0 bottom-full mb-2 hidden group-hover:block bg-gray-900 text-white text-xs p-2 rounded shadow-xl w-[220px] z-[9999] break-words">
-      {t.stuckReason}
-    </div>
-  )}
-</td>
-
-                      <td className="p-3">
-                        {t.testingSheetUrl ? (
-                          <a href={t.testingSheetUrl} target="_blank">
-                            View
-                          </a>
-                        ) : "-"}
-                      </td>
-
-                      <td className="p-3 max-w-[150px] relative group cursor-pointer text-xs text-blue-600">
-  <div className="truncate">
-    {lastLog?.testerComment || "-"}
-  </div>
-
-  {lastLog?.testerComment && (
-    <div className="absolute left-0 bottom-full mb-2 hidden group-hover:block bg-gray-900 text-white text-xs p-2 rounded shadow-xl w-[240px] z-[9999] break-words">
-      {lastLog.testerComment}
-    </div>
-  )}
-</td>
-
-                      <td className="p-3 text-xs text-red-600">
-                        {t.penaltyComment || "-"}
-                      </td>
-
-                      {/* ✅ ACTION BUTTON */}
-                      <td className="p-3">
-                        {(user?.role === "developer" || user?.role === "admin") && (
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-
-                           const rect = e.currentTarget.getBoundingClientRect();
-
-const dropdownHeight = 150; // approx height of menu
-
-let top = rect.bottom;
-let left = rect.right;
-
-// 🔥 if no space at bottom → open upward
-if (window.innerHeight - rect.bottom < dropdownHeight) {
-  top = rect.top - dropdownHeight;
-}
-
-setMenuPosition({
-  x: left,
-  y: top
-});
-
-                              setOpenMenu(openMenu === t._id ? null : t._id);
-                            }}
-                            className="text-gray-600 text-lg px-2"
+                          <td
+                            className="p-3 w-[80px] cursor-pointer hover:bg-gray-50"
+                            onClick={() => navigate(`/tasks/${t._id}`)}
                           >
-                            ⋮
-                          </button>
-                        )}
+                            <div className="bg-gray-200 h-1.5 rounded">
+                              <div
+                                className="bg-indigo-600 h-1.5 rounded"
+                                style={{ width: `${t.progress || 0}%` }}
+                              ></div>
+                            </div>
 
-                        {/* ✅ FLOATING DROPDOWN */}
-        {/* ✅ FLOATING DROPDOWN */}
-{openMenu === t._id && (
-  <div
-    onClick={(e) => e.stopPropagation()}
-    style={{
-      position: "fixed",
-      top: menuPosition.y + 5,   // ✅ IMPORTANT (you removed this)
-      left: menuPosition.x - 180
-    }}
-    className="w-[200px] bg-white border rounded-xl shadow-2xl z-[99999]"
-  >
+                            <span className="text-[10px] text-gray-600">
+                              {t.progress}%
+                            </span>
 
-    {/* 👨‍💻 DEVELOPER */}
-    {user?.role === "developer" && (
-      <>
-        <button
-          onClick={() => {
-            updateProgress(t._id, t.progress || 0);
-            setOpenMenu(null);
-          }}
-          className="flex items-center gap-2 w-full px-4 py-2 text-sm hover:bg-gray-100 text-blue-600"
-        >
-          🔄 Update Progress
-        </button>
+                            <p className="text-xs text-gray-500 mt-1 break-words">
+                              {lastLog?.note || "No update"}
+                            </p>
+                          </td>
 
-        <button
-          onClick={() => {
-            updateSheet(t._id);
-            setOpenMenu(null);
-          }}
-          className="flex items-center gap-2 w-full px-4 py-2 text-sm hover:bg-gray-100 text-purple-600"
-        >
-          📄 Testing Sheet
-        </button>
+                          <td className="p-3">
+                            <span className="px-2 py-1 rounded text-xs font-semibold">
+                              {t.status}
+                            </span>
+                          </td>
 
-        <button
-          onClick={() => {
-            addTesterComment(t._id);
-            setOpenMenu(null);
-          }}
-          className="flex items-center gap-2 w-full px-4 py-2 text-sm hover:bg-gray-100 text-indigo-600"
-        >
-          💬 Tester Comment
-        </button>
+                          <td className="p-3 max-w-[120px] relative group cursor-pointer">
+                            <div className="truncate">
+                              {t.stuckReason || "-"}
+                            </div>
 
-        <button
-          onClick={() => {
-            updateStuck(t._id);
-            setOpenMenu(null);
-          }}
-          className="flex items-center gap-2 w-full px-4 py-2 text-sm hover:bg-gray-100 text-red-500"
-        >
-          ⚠️ Stuck
-        </button>
+                            {t.stuckReason && (
+                              <div className="absolute left-0 bottom-full mb-2 hidden group-hover:block bg-gray-900 text-white text-xs p-2 rounded shadow-xl w-[220px] z-[9999] break-words">
+                                {t.stuckReason}
+                              </div>
+                            )}
+                          </td>
 
-        <div className="border-t"></div>
-      </>
-    )}
+                          <td className="p-3">
+                            {t.testingSheetUrl ? (
+                              <a href={t.testingSheetUrl} target="_blank">
+                                View
+                              </a>
+                            ) : (
+                              "-"
+                            )}
+                          </td>
 
-    {/* 👑 ADMIN */}
-    {user?.role === "admin" && (
-      <>
-        {t.status !== "completed" && (
-          <button
-            onClick={() => {
-              verifyTask(t._id);
-              setOpenMenu(null);
-            }}
-            className="flex items-center gap-2 w-full px-4 py-2 text-sm hover:bg-gray-100 text-green-600"
-          >
-            ✅ Verify
-          </button>
-        )}
+                          <td className="p-3 max-w-[150px] relative group cursor-pointer text-xs text-blue-600">
+                            <div className="truncate">
+                              {lastLog?.testerComment || "-"}
+                            </div>
 
-        <button
-          onClick={() => {
-            addPenalty(t._id);
-            setOpenMenu(null);
-          }}
-          className="flex items-center gap-2 w-full px-4 py-2 text-sm hover:bg-gray-100 text-red-600"
-        >
-          🚫 Penalty
-        </button>
+                            {lastLog?.testerComment && (
+                              <div className="absolute left-0 bottom-full mb-2 hidden group-hover:block bg-gray-900 text-white text-xs p-2 rounded shadow-xl w-[240px] z-[9999] break-words">
+                                {lastLog.testerComment}
+                              </div>
+                            )}
+                          </td>
 
-        <div className="border-t"></div>
+                          <td className="p-3 text-xs text-red-600">
+                            {t.penaltyComment || "-"}
+                          </td>
 
-        <button
-          onClick={() => {
-            editTask(t);
-            setOpenMenu(null);
-          }}
-          className="flex items-center gap-2 w-full px-4 py-2 text-sm hover:bg-gray-100 text-gray-700"
-        >
-          ✏️ Edit
-        </button>
+                          {/* ✅ ACTION BUTTON */}
+                          <td className="p-3">
+                            {(user?.role === "developer" ||
+                              user?.role === "admin") && (
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
 
-        <button
-          onClick={() => {
-            deleteTask(t._id);
-            setOpenMenu(null);
-          }}
-          className="flex items-center gap-2 w-full px-4 py-2 text-sm hover:bg-gray-100 text-red-700"
-        >
-          🗑 Delete
-        </button>
-      </>
-    )}
+                                  const rect =
+                                    e.currentTarget.getBoundingClientRect();
 
-  </div>
-)}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-            </div>  
+                                  const dropdownHeight = 150; // approx height of menu
+
+                                  let top = rect.bottom;
+                                  let left = rect.right;
+
+                                  // 🔥 if no space at bottom → open upward
+                                  if (
+                                    window.innerHeight - rect.bottom <
+                                    dropdownHeight
+                                  ) {
+                                    top = rect.top - dropdownHeight;
+                                  }
+
+                                  setMenuPosition({
+                                    x: left,
+                                    y: top,
+                                  });
+
+                                  setOpenMenu(
+                                    openMenu === t._id ? null : t._id,
+                                  );
+                                }}
+                                className="text-gray-600 text-lg px-2"
+                              >
+                                ⋮
+                              </button>
+                            )}
+
+                            {/* ✅ FLOATING DROPDOWN */}
+                            {/* ✅ FLOATING DROPDOWN */}
+                            {openMenu === t._id && (
+                              <div
+                                onClick={(e) => e.stopPropagation()}
+                                style={{
+                                  position: "fixed",
+                                  top: menuPosition.y + 5, // ✅ IMPORTANT (you removed this)
+                                  left: menuPosition.x - 180,
+                                }}
+                                className="w-[200px] bg-white border rounded-xl shadow-2xl z-[99999]"
+                              >
+                                {/* 👨‍💻 DEVELOPER */}
+                                {user?.role === "developer" && (
+                                  <>
+                                    <button
+                                      onClick={() => {
+                                        updateProgress(t._id, t.progress || 0);
+                                        setOpenMenu(null);
+                                      }}
+                                      className="flex items-center gap-2 w-full px-4 py-2 text-sm hover:bg-gray-100 text-blue-600"
+                                    >
+                                      🔄 Update Progress
+                                    </button>
+
+                                    <button
+                                      onClick={() => {
+                                        updateSheet(t._id);
+                                        setOpenMenu(null);
+                                      }}
+                                      className="flex items-center gap-2 w-full px-4 py-2 text-sm hover:bg-gray-100 text-purple-600"
+                                    >
+                                      📄 Testing Sheet
+                                    </button>
+
+                                    <button
+                                      onClick={() => {
+                                        addTesterComment(t._id);
+                                        setOpenMenu(null);
+                                      }}
+                                      className="flex items-center gap-2 w-full px-4 py-2 text-sm hover:bg-gray-100 text-indigo-600"
+                                    >
+                                      💬 Tester Comment
+                                    </button>
+
+                                    <button
+                                      onClick={() => {
+                                        updateStuck(t._id);
+                                        setOpenMenu(null);
+                                      }}
+                                      className="flex items-center gap-2 w-full px-4 py-2 text-sm hover:bg-gray-100 text-red-500"
+                                    >
+                                      ⚠️ Stuck
+                                    </button>
+
+                                    <div className="border-t"></div>
+                                  </>
+                                )}
+
+                                {/* 👑 ADMIN */}
+                                {user?.role === "admin" && (
+                                  <>
+                                    {t.status !== "completed" && (
+                                      <button
+                                        onClick={() => {
+                                          verifyTask(t._id);
+                                          setOpenMenu(null);
+                                        }}
+                                        className="flex items-center gap-2 w-full px-4 py-2 text-sm hover:bg-gray-100 text-green-600"
+                                      >
+                                        ✅ Verify
+                                      </button>
+                                    )}
+
+                                    <button
+                                      onClick={() => {
+                                        addPenalty(t._id);
+                                        setOpenMenu(null);
+                                      }}
+                                      className="flex items-center gap-2 w-full px-4 py-2 text-sm hover:bg-gray-100 text-red-600"
+                                    >
+                                      🚫 Penalty
+                                    </button>
+
+                                    <div className="border-t"></div>
+
+                                    <button
+                                      onClick={() => {
+                                        editTask(t);
+                                        setOpenMenu(null);
+                                      }}
+                                      className="flex items-center gap-2 w-full px-4 py-2 text-sm hover:bg-gray-100 text-gray-700"
+                                    >
+                                      ✏️ Edit
+                                    </button>
+
+                                    <button
+                                      onClick={() => {
+                                        deleteTask(t._id);
+                                        setOpenMenu(null);
+                                      }}
+                                      className="flex items-center gap-2 w-full px-4 py-2 text-sm hover:bg-gray-100 text-red-700"
+                                    >
+                                      🗑 Delete
+                                    </button>
+                                  </>
+                                )}
+                              </div>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
       </div>
 
       {showModal && (
-  <CreateTask
-    onClose={() => {
-      setShowModal(false);
-      setEditTaskData(null);
-    }}
-    refresh={fetchTasks}
-    editTaskData={editTaskData}
-  />
-)}
+        <CreateTask
+          onClose={() => {
+            setShowModal(false);
+            setEditTaskData(null);
+          }}
+          refresh={fetchTasks}
+          editTaskData={editTaskData}
+        />
+      )}
     </div>
   );
 }
