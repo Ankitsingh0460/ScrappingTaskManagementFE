@@ -19,19 +19,26 @@ export default function Dashboard() {
 
   const total = tasks.length;
   const completed = tasks.filter(t => t.status === "completed").length;
-  const overdue = tasks.filter(
-    t =>
-      new Date(t.expectedCompletionDate) < new Date() &&
-      t.status !== "completed"
-  ).length;
+  // const overdue = tasks.filter(
+  //   t =>
+  //     new Date(t.expectedCompletionDate) < new Date() &&
+  //     t.status !== "completed"
+  // ).length;
   const inProgress = tasks.filter(t => t.status === "in_progress").length;
 
-  // ✅ NEW: Due status helper
-  const getDueStatus = (date) => {
-    if (!date) return null;
+  // ✅ UPDATED: Due status helper (FIXED LOGIC)
+  const getDueStatus = (task) => {
+    if (!task?.expectedCompletionDate) return null;
+
+    // ✅ If completed → no highlight
+    if (task.status === "completed") return "completed";
 
     const today = new Date();
-    const dueDate = new Date(date);
+    const dueDate = new Date(task.expectedCompletionDate);
+
+    // ✅ Remove time (important fix)
+    today.setHours(0, 0, 0, 0);
+    dueDate.setHours(0, 0, 0, 0);
 
     const diffTime = dueDate - today;
     const diffDays = diffTime / (1000 * 60 * 60 * 24);
@@ -43,28 +50,32 @@ export default function Dashboard() {
   };
 
   const sortedTasks = [...tasks].sort((a, b) => {
-  const getPriority = (task) => {
-    const status = getDueStatus(task.expectedCompletionDate);
+    const getPriority = (task) => {
+      const status = getDueStatus(task);
 
-    if (status === "overdue") return 0;
-    if (status === "dueSoon") return 1;
-    return 2;
-  };
+      if (status === "overdue") return 0;
+      if (status === "dueSoon") return 1;
+      return 2;
+    };
 
-  const priorityA = getPriority(a);
-  const priorityB = getPriority(b);
+    const priorityA = getPriority(a);
+    const priorityB = getPriority(b);
 
-  // Step 1: sort by priority
-  if (priorityA !== priorityB) {
-    return priorityA - priorityB;
-  }
+    // Step 1: sort by priority
+    if (priorityA !== priorityB) {
+      return priorityA - priorityB;
+    }
 
-  // Step 2: sort by date inside same group
-  const dateA = new Date(a.expectedCompletionDate || 0);
-  const dateB = new Date(b.expectedCompletionDate || 0);
+    // Step 2: sort by date inside same group
+    const dateA = new Date(a.expectedCompletionDate || 0);
+    const dateB = new Date(b.expectedCompletionDate || 0);
 
-  return dateA - dateB; // ascending (nearest first)
-});
+    return dateA - dateB;
+  });
+
+  const overdue = tasks.filter(
+  t => getDueStatus(t) === "overdue"
+).length;
 
   return (
     <div className="flex">
@@ -115,7 +126,6 @@ export default function Dashboard() {
         {/* Task Table */}
         <div className="p-6">
           <div className="bg-white p-6 rounded-xl shadow-lg">
-
             <h3 className="mb-4 text-lg font-semibold">
               Task Overview
             </h3>
@@ -131,76 +141,77 @@ export default function Dashboard() {
               </thead>
 
               <tbody>
-               {sortedTasks.map(task => (
-                  <tr
-                    key={task._id}
-                    className={`border-t transition
-                      ${
-                        getDueStatus(task.expectedCompletionDate) === "overdue"
-                          ? "bg-red-50 hover:bg-red-100"
-                          : getDueStatus(task.expectedCompletionDate) === "dueSoon"
-                          ? "bg-yellow-50 hover:bg-yellow-100"
-                          : "hover:bg-gray-50"
-                      }
-                    `}
-                  >
-                    <td className="p-3 font-medium">
-                      {task.crawlerName}
-                    </td>
+                {sortedTasks.map(task => {
+                  const status = getDueStatus(task);
 
-                    <td className="p-3">
-                      {task.developer?.name || "-"}
-                    </td>
+                  return (
+                    <tr
+                      key={task._id}
+                      className={`border-t transition
+                        ${
+                          status === "overdue"
+                            ? "bg-red-50 hover:bg-red-100"
+                            : status === "dueSoon"
+                            ? "bg-yellow-50 hover:bg-yellow-100"
+                            : "hover:bg-gray-50"
+                        }
+                      `}
+                    >
+                      <td className="p-3 font-medium">
+                        {task.crawlerName}
+                      </td>
 
-                    {/* Status Badge */}
-                    <td className="p-3">
-                      <span
-                        className={`px-3 py-1 rounded-full text-xs font-semibold
-                          ${
-                            task.status === "completed"
-                              ? "bg-green-100 text-green-600"
-                              : task.status === "in_progress"
-                              ? "bg-yellow-100 text-yellow-600"
-                              : task.status === "testing"
-                              ? "bg-blue-100 text-blue-600"
-                              : "bg-gray-100 text-gray-600"
-                          }
-                        `}
-                      >
-                        {task.status}
-                      </span>
-                    </td>
+                      <td className="p-3">
+                        {task.developer?.name || "-"}
+                      </td>
 
-                    {/* ✅ Due Date Highlight */}
-                    <td className="p-3 text-sm font-medium">
-                      {task.expectedCompletionDate ? (
+                      {/* Status Badge */}
+                      <td className="p-3">
                         <span
-                          className={`px-2 py-1 rounded-md text-xs font-semibold
+                          className={`px-3 py-1 rounded-full text-xs font-semibold
                             ${
-                              getDueStatus(task.expectedCompletionDate) === "overdue"
-                                ? "bg-red-100 text-red-500"
-                                : getDueStatus(task.expectedCompletionDate) === "dueSoon"
+                              task.status === "completed"
+                                ? "bg-green-100 text-green-600"
+                                : task.status === "in_progress"
                                 ? "bg-yellow-100 text-yellow-600"
-                                : "text-gray-500"
+                                : task.status === "testing"
+                                ? "bg-blue-100 text-blue-600"
+                                : "bg-gray-100 text-gray-600"
                             }
                           `}
                         >
-                          {new Date(
-                            task.expectedCompletionDate
-                          ).toDateString()}
-
-                          {getDueStatus(task.expectedCompletionDate) === "overdue" &&
-                            " ❌ Overdue"}
-                          {getDueStatus(task.expectedCompletionDate) === "dueSoon" &&
-                            " ⚠️ Due Soon"}
+                          {task.status}
                         </span>
-                      ) : (
-                        "-"
-                      )}
-                    </td>
+                      </td>
 
-                  </tr>
-                ))}
+                      {/* Due Date */}
+                      <td className="p-3 text-sm font-medium">
+                        {task.expectedCompletionDate ? (
+                          <span
+                            className={`px-2 py-1 rounded-md text-xs font-semibold
+                              ${
+                                status === "overdue"
+                                  ? "bg-red-100 text-red-500"
+                                  : status === "dueSoon"
+                                  ? "bg-yellow-100 text-yellow-600"
+                                  : "text-gray-500"
+                              }
+                            `}
+                          >
+                            {new Date(
+                              task.expectedCompletionDate
+                            ).toDateString()}
+
+                            {status === "overdue" && " ❌ Overdue"}
+                            {status === "dueSoon" && " ⚠️ Due Soon"}
+                          </span>
+                        ) : (
+                          "-"
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
 
