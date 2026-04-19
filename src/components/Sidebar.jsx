@@ -1,5 +1,5 @@
 import { Link, useLocation } from "react-router-dom";
-import { LayoutDashboard, Folder, CheckSquare, Users } from "lucide-react";
+import { LayoutDashboard, Folder, CheckSquare, Users, AudioLines, ClipboardList } from "lucide-react";
 
 export default function Sidebar() {
   const location = useLocation();
@@ -13,7 +13,9 @@ export default function Sidebar() {
     { name: "Projects", path: "/projects", icon: <Folder size={18} /> },
     { name: "Tasks", path: "/tasks", icon: <CheckSquare size={18} /> },
     { name: "Operation PICs", path: "/users", icon: <Users size={18} /> },
+     { name: "AuditLogs", path: "/audit", icon: <ClipboardList size={18} /> },
     { name: "Change Password", path: "/change-password", icon: <Users size={18} /> }
+   
   ];
 
   return (
