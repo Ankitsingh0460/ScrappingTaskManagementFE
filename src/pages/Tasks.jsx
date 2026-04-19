@@ -14,6 +14,8 @@ export default function Tasks() {
   const [editTaskData, setEditTaskData] = useState(null);
   const [selectedProject, setSelectedProject] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [selectedDeveloper, setSelectedDeveloper] = useState("all");
+  const [developers, setDevelopers] = useState([]);
   // ✅ NEW (for floating menu position)
   const [menuPosition, setMenuPosition] = useState({ x: 0, y: 0 });
 
@@ -42,6 +44,7 @@ export default function Tasks() {
   useEffect(() => {
     fetchTasks();
     fetchProjects(); // 👈 ADD THIS
+    fetchDevelopers();
   }, []);
 
   const fetchProjects = async () => {
@@ -73,7 +76,14 @@ export default function Tasks() {
     await axios.delete(`/tasks/${id}`);
     fetchTasks();
   };
+  const fetchDevelopers = async () => {
+    const res = await axios.get("/users"); // or /developers (based on your API)
 
+    // ✅ filter only developers
+    const devs = res.data.filter((u) => u.role === "developer");
+
+    setDevelopers(devs);
+  };
   // const editTask = async (task) => {
   //   const name = prompt("Edit crawler name", task.crawlerName);
   //   if (!name) return;
@@ -190,6 +200,14 @@ export default function Tasks() {
     return "normal";
   };
 
+  // const developers = [
+  //   ...new Map(
+  //     tasks
+  //       .filter((t) => t.developer?._id)
+  //       .map((t) => [t.developer._id, t.developer]),
+  //   ).values(),
+  // ];
+
   return (
     <div className="flex">
       <div className="w-64 flex-shrink-0">
@@ -230,7 +248,19 @@ export default function Tasks() {
                 <option value="tomorrow">Tomorrow Due</option>
                 <option value="week">This Week Due</option>
               </select>
+              <select
+                value={selectedDeveloper}
+                onChange={(e) => setSelectedDeveloper(e.target.value)}
+                className="border px-3 py-2 rounded-lg text-sm bg-white"
+              >
+                <option value="all">All Developers</option>
 
+                {developers.map((dev) => (
+                  <option key={dev._id} value={dev._id}>
+                    {dev.name}
+                  </option>
+                ))}
+              </select>
               <input
                 type="text"
                 placeholder="Search crawler..."
@@ -295,6 +325,14 @@ export default function Tasks() {
                             : t.projectId;
 
                         if (String(taskProjectId) !== String(selectedProject)) {
+                          return false;
+                        }
+                      }
+                      // ✅ DEVELOPER FILTER
+                      if (selectedDeveloper !== "all") {
+                        if (
+                          String(t.developer?._id) !== String(selectedDeveloper)
+                        ) {
                           return false;
                         }
                       }
