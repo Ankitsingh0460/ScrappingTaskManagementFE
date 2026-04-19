@@ -9,6 +9,7 @@ import ProtectedRoute from "./routes/ProtectedRoute";
 import ForgotPassword from "./pages/ForgetPaassword";
 import TaskDetails from "./pages/TaskDetails";
 import ChangePassword from "./pages/ChangePassword";
+import AuditLogs from "./pages/AuditLogs";
 
 function App() {
   return (
@@ -23,6 +24,7 @@ function App() {
       <Route path="/forgot-password" element={<ForgotPassword/>} />
       <Route path="/tasks/:id" element={<TaskDetails />} />
        <Route path="/change-password" element={<ChangePassword/>} />
+       <Route path="/audit" element={<AuditLogs/>} />
     </Routes>
   );
 }
