@@ -168,6 +168,29 @@ const fetchProjects = async () => {
   return new Date(b.createdAt || b._id) - new Date(a.createdAt || a._id);
 });
 
+// ✅ ADD THIS BELOW useNavigate()
+const getDueStatus = (task) => {
+  if (!task?.expectedCompletionDate) return null;
+
+  if (task.status === "completed") return "completed";
+
+  const today = new Date();
+  const dueDate = new Date(task.expectedCompletionDate);
+
+  // ✅ remove time
+  today.setHours(0, 0, 0, 0);
+  dueDate.setHours(0, 0, 0, 0);
+
+  const diffTime = dueDate - today;
+  const diffDays = diffTime / (1000 * 60 * 60 * 24);
+
+  if (diffDays < 0) return "overdue";
+  if (diffDays === 0) return "today";   // ⭐ NEW
+  if (diffDays <= 2) return "dueSoon";
+
+  return "normal";
+};
+
   return (
     <div className="flex">
   <div className="w-64 flex-shrink-0">
@@ -183,11 +206,12 @@ const fetchProjects = async () => {
   <div className="flex gap-2">
 
     {[
-      { label: "All Task", value: "all" },
-      { label: "Completed", value: "completed" },
-      { label: "In Progress", value: "in-progress" },
-      { label: "Overdue", value: "overdue" }
-    ].map(btn => (
+  { label: "All Task", value: "all" },
+  { label: "Completed", value: "completed" },
+  { label: "In Progress", value: "in-progress" },
+  { label: "Overdue", value: "overdue" },
+  { label: "Today Due", value: "today" } // ⭐ ADD THIS
+].map(btn => (
       <button
         key={btn.value}
         onClick={() => setStatusFilter(btn.value)}
@@ -296,26 +320,28 @@ const fetchProjects = async () => {
     return t.status !== "completed";
   }
 
-  if (statusFilter === "overdue") {
-    return (
-      new Date(t.expectedCompletionDate) < new Date() &&
-      t.status !== "completed"
-    );
-  }
+ if (statusFilter === "overdue") {
+  return getDueStatus(t) === "overdue";
+}
+
+if (statusFilter === "today") {
+  return getDueStatus(t) === "today";
+}
 
   return true;
 })
   .map(t => {
                   const lastLog = t.progressLogs?.slice(-1)[0];
-
+                 const dueStatus = getDueStatus(t);
                   return (
                     <tr
   key={t._id}
   className={`border-t hover:bg-gray-50
     ${
-      new Date(t.expectedCompletionDate) < new Date() &&
-      t.status !== "completed"
-        ? "bg-red-100"
+      dueStatus === "overdue"
+        ? ""
+        : dueStatus === "today"
+        ? ""
         : ""
     }
   `}
@@ -335,7 +361,29 @@ const fetchProjects = async () => {
 <td className="p-3 text-center">{t.developer?.name}</td>
 <td className="p-3 text-center">{t.tester?.name}</td>
 <td className="p-3 text-center">{formatDate(t.assignDate)}</td>
-<td className="p-3 text-center">{formatDate(t.expectedCompletionDate)}</td>
+<td className="p-3 text-center">
+  {t.expectedCompletionDate ? (
+    <span
+      className={`px-2 py-1 rounded text-xs font-semibold flex items-center justify-center inline-block
+        ${
+          getDueStatus(t) === "overdue"
+            ? "bg-red-100 text-red-600"
+            : getDueStatus(t) === "today"
+            ? "bg-orange-100 text-orange-600"
+            : getDueStatus(t) === "dueSoon"
+            ? "bg-blue-100 text-blue-600"
+            : "text-gray-500"
+        }
+      `}
+    >
+      {formatDate(t.expectedCompletionDate)}
+
+      {getDueStatus(t) === "overdue" && "  Overdue"}
+      {getDueStatus(t) === "today" && "  Today"}
+      {getDueStatus(t) === "dueSoon" && "  Due Soon"}
+    </span>
+  ) : "-"}
+</td>
 
                       <td
                         className="p-3 w-[80px] cursor-pointer hover:bg-gray-50"
