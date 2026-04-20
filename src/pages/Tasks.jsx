@@ -772,7 +772,22 @@ function FormBox({ type, onSubmit, onClose, currentValue }) {
         </button>
 
         <button
-          onClick={() => onSubmit(form)}
+          onClick={() => {
+            // ✅ VALIDATION FOR PROGRESS FORM
+            if (type === "progress") {
+              if (!form.progress && form.progress !== 0) {
+                alert("Please enter progress % ❌");
+                return;
+              }
+
+              if (!form.note || form.note.trim() === "") {
+                alert("Please enter work done today ❌");
+                return;
+              }
+            }
+
+            onSubmit(form);
+          }}
           className="bg-indigo-600 text-white px-3 py-1 rounded"
         >
           Submit
