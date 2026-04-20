@@ -7,13 +7,13 @@ export default function Users() {
   const [users, setUsers] = useState([]);
   const [error, setError] = useState("");
 
-  const user = JSON.parse(localStorage.getItem("user")); // 🔥 NEW
+  const user = JSON.parse(localStorage.getItem("user"));
 
   const [form, setForm] = useState({
     name: "",
     email: "",
     password: "",
-    role: "developer"
+    role: "developer",
   });
 
   useEffect(() => {
@@ -47,7 +47,7 @@ export default function Users() {
         name: "",
         email: "",
         password: "",
-        role: "developer"
+        role: "developer",
       });
 
       fetchUsers();
@@ -57,10 +57,8 @@ export default function Users() {
     }
   };
 
-  // 🔥 DELETE USER FUNCTION
   const deleteUser = async (id) => {
     const confirmDelete = confirm("Are you sure to delete this user?");
-
     if (!confirmDelete) return;
 
     try {
@@ -73,41 +71,37 @@ export default function Users() {
   };
 
   return (
-    <div className="flex">
-
+    <div className="flex h-screen overflow-hidden">
+      {" "}
+      {/* ✅ UPDATED */}
       {/* Sidebar */}
       <Sidebar />
-
       {/* Main */}
-      <div className="flex-1 bg-gray-100 min-h-screen">
+      <div className="flex-1 bg-gray-100 flex flex-col">
+        {" "}
+        {/* ✅ UPDATED */}
         <Header />
-
-        <div className="p-6">
-
+        {/* Scrollable Content */}
+        <div className="p-6 overflow-y-auto flex-1">
+          {" "}
+          {/* ✅ UPDATED */}
           {/* Title */}
-          <h2 className="text-xl font-semibold mb-4">
-            Operation PICs
-          </h2>
-
+          <h2 className="text-xl font-semibold mb-4">Operation PICs</h2>
           {/* ERROR */}
-          {error && (
-            <p className="text-red-500 mb-4">{error}</p>
-          )}
-
+          {error && <p className="text-red-500 mb-4">{error}</p>}
           {/* Add User */}
           <div className="bg-white p-6 rounded-xl shadow mb-6 grid grid-cols-4 gap-4">
-
             <input
               placeholder="Name"
               value={form.name}
-              onChange={e => setForm({ ...form, name: e.target.value })}
+              onChange={(e) => setForm({ ...form, name: e.target.value })}
               className="p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
             />
 
             <input
               placeholder="Email"
               value={form.email}
-              onChange={e => setForm({ ...form, email: e.target.value })}
+              onChange={(e) => setForm({ ...form, email: e.target.value })}
               className="p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
             />
 
@@ -115,13 +109,13 @@ export default function Users() {
               placeholder="Password"
               type="password"
               value={form.password}
-              onChange={e => setForm({ ...form, password: e.target.value })}
+              onChange={(e) => setForm({ ...form, password: e.target.value })}
               className="p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
             />
 
             <select
               value={form.role}
-              onChange={e => setForm({ ...form, role: e.target.value })}
+              onChange={(e) => setForm({ ...form, role: e.target.value })}
               className="p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
             >
               <option value="developer">Developer</option>
@@ -136,25 +130,21 @@ export default function Users() {
                 Add User
               </button>
             </div>
-
           </div>
-
           {/* Users Table */}
           <div className="bg-white rounded-xl shadow p-6">
-
             <table className="w-full border-collapse">
-
               <thead>
                 <tr className="bg-gray-100 text-left text-sm text-gray-600">
                   <th className="p-3">Name</th>
                   <th className="p-3">Email</th>
                   <th className="p-3">Role</th>
-                  <th className="p-3">Action</th> {/* 🔥 NEW */}
+                  <th className="p-3">Action</th>
                 </tr>
               </thead>
 
               <tbody>
-                {users.map(u => (
+                {users.map((u) => (
                   <tr
                     key={u._id}
                     className="border-t hover:bg-gray-50 transition"
@@ -176,7 +166,6 @@ export default function Users() {
                       </span>
                     </td>
 
-                    {/* 🔥 DELETE BUTTON (ADMIN ONLY) */}
                     <td className="p-3">
                       {user?.role === "admin" && (
                         <button
@@ -187,18 +176,13 @@ export default function Users() {
                         </button>
                       )}
                     </td>
-
                   </tr>
                 ))}
               </tbody>
-
             </table>
-
           </div>
-
         </div>
       </div>
-
     </div>
   );
 }
