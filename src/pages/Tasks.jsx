@@ -16,6 +16,12 @@ export default function Tasks() {
   const [statusFilter, setStatusFilter] = useState("all");
   const [selectedDeveloper, setSelectedDeveloper] = useState("all");
   const [developers, setDevelopers] = useState([]);
+  const [formModal, setFormModal] = useState({
+    open: false,
+    type: null,
+    taskId: null,
+    currentValue: 0,
+  });
   // ✅ NEW (for floating menu position)
   const [menuPosition, setMenuPosition] = useState({ x: 0, y: 0 });
 
@@ -99,59 +105,26 @@ export default function Tasks() {
     setShowModal(true);
   };
 
-  const updateProgress = async (id, currentProgress) => {
-    const progress = prompt(`Current: ${currentProgress}%. Enter new progress`);
-    const note = prompt("Work done today");
-
-    if (!progress) return;
-
-    const newProgress = Number(progress);
-
-    if (newProgress < currentProgress) {
-      alert(`Progress cannot decrease ❌`);
-      return;
-    }
-
-    await axios.put(`/tasks/${id}/progress`, {
-      progress: newProgress,
-      note,
+  const updateProgress = (id, currentProgress) => {
+    setFormModal({
+      open: true,
+      type: "progress",
+      taskId: id,
+      currentValue: currentProgress,
     });
-
-    fetchTasks();
   };
 
-  const updateSheet = async (id) => {
-    const url = prompt("Enter testing sheet URL");
-    if (!url) return;
-
-    await axios.put(`/tasks/${id}`, {
-      testingSheetUrl: url,
-    });
-
-    fetchTasks();
+  const updateSheet = (id) => {
+    setFormModal({ open: true, type: "TESTING SHEET", taskId: id });
   };
 
-  const updateStuck = async (id) => {
-    const reason = prompt("Enter stuck reason");
-    if (!reason) return;
-
-    await axios.put(`/tasks/${id}`, {
-      stuckReason: reason,
-    });
-
-    fetchTasks();
+  const updateStuck = (id) => {
+    setFormModal({ open: true, type: "STUCK REASON", taskId: id });
+  };
+  const addTesterComment = (id) => {
+    setFormModal({ open: true, type: "TESTER COMMENT", taskId: id });
   };
 
-  const addTesterComment = async (id) => {
-    const comment = prompt("Enter tester comment");
-    if (!comment) return;
-
-    await axios.put(`/tasks/${id}/tester-comment`, {
-      comment,
-    });
-
-    fetchTasks();
-  };
   useEffect(() => {
     const handleEsc = (e) => {
       if (e.key === "Escape") setOpenMenu(null);
@@ -160,20 +133,56 @@ export default function Tasks() {
     return () => window.removeEventListener("keydown", handleEsc);
   }, []);
 
-  const addPenalty = async (id) => {
-    const comment = prompt("Enter penalty comment");
-    if (!comment) return;
-
-    await axios.put(`/tasks/${id}/penalty`, {
-      comment,
-    });
-
-    fetchTasks();
+  const addPenalty = (id) => {
+    setFormModal({ open: true, type: "PENALTY", taskId: id });
   };
 
   const sortedTasks = [...tasks].sort((a, b) => {
     return new Date(b.createdAt || b._id) - new Date(a.createdAt || a._id);
   });
+
+  const handleFormSubmit = async (data) => {
+    const { type, taskId, currentValue } = formModal;
+
+    if (type === "progress") {
+      if (data.progress < currentValue) {
+        alert("Progress cannot decrease ❌");
+        return;
+      }
+
+      await axios.put(`/tasks/${taskId}/progress`, {
+        progress: data.progress,
+        note: data.note,
+      });
+    }
+
+    if (type === "TESTING SHEET") {
+      await axios.put(`/tasks/${taskId}`, {
+        testingSheetUrl: data.url,
+      });
+    }
+
+    if (type === "STUCK REASON") {
+      await axios.put(`/tasks/${taskId}`, {
+        stuckReason: data.reason,
+      });
+    }
+
+    if (type === "TESTER COMMENT") {
+      await axios.put(`/tasks/${taskId}/tester-comment`, {
+        comment: data.comment,
+      });
+    }
+
+    if (type === "PENALTY") {
+      await axios.put(`/tasks/${taskId}/penalty`, {
+        comment: data.comment,
+      });
+    }
+
+    setFormModal({ open: false });
+    fetchTasks();
+  };
 
   // ✅ ADD THIS BELOW useNavigate()
   const getDueStatus = (task) => {
@@ -248,19 +257,22 @@ export default function Tasks() {
                 <option value="tomorrow">Tomorrow Due</option>
                 <option value="week">This Week Due</option>
               </select>
-              <select
-                value={selectedDeveloper}
-                onChange={(e) => setSelectedDeveloper(e.target.value)}
-                className="border px-3 py-2 rounded-lg text-sm bg-white"
-              >
-                <option value="all">All Developers</option>
+              {user?.role === "admin" && (
+                <select
+                  value={selectedDeveloper}
+                  onChange={(e) => setSelectedDeveloper(e.target.value)}
+                  className="border px-3 py-2 rounded-lg text-sm bg-white"
+                >
+                  <option value="all">All Developers</option>
 
-                {developers.map((dev) => (
-                  <option key={dev._id} value={dev._id}>
-                    {dev.name}
-                  </option>
-                ))}
-              </select>
+                  {developers.map((dev) => (
+                    <option key={dev._id} value={dev._id}>
+                      {dev.name}
+                    </option>
+                  ))}
+                </select>
+              )}
+
               <input
                 type="text"
                 placeholder="Search crawler..."
@@ -428,9 +440,9 @@ export default function Tasks() {
                             className="p-3 w-[80px] cursor-pointer hover:bg-gray-50"
                             onClick={() => navigate(`/tasks/${t._id}`)}
                           >
-                            <div className="bg-gray-200 h-1.5 rounded">
+                            <div className="bg-gray-200 h-1.5 rounded ">
                               <div
-                                className="bg-indigo-600 h-1.5 rounded"
+                                className="bg-indigo-600 h-1.5 rounded "
                                 style={{ width: `${t.progress || 0}%` }}
                               ></div>
                             </div>
@@ -439,9 +451,19 @@ export default function Tasks() {
                               {t.progress}%
                             </span>
 
-                            <p className="text-xs text-gray-500 mt-1 break-words">
-                              {lastLog?.note || "No update"}
-                            </p>
+                            <div className="relative group">
+                              {/* SHORT TEXT */}
+                              <p className="text-xs text-gray-500 mt-1 truncate max-w-[120px]">
+                                {lastLog?.note || "No update"}
+                              </p>
+
+                              {/* HOVER FULL TEXT */}
+                              {lastLog?.note && (
+                                <div className="absolute left-0 bottom-full mb-2 hidden group-hover:block bg-gray-900 text-white text-xs p-2 rounded shadow-xl w-[220px] z-[9999] break-words">
+                                  {lastLog.note}
+                                </div>
+                              )}
+                            </div>
                           </td>
 
                           <td className="p-3">
@@ -450,7 +472,7 @@ export default function Tasks() {
                             </span>
                           </td>
 
-                          <td className="p-3 max-w-[120px] relative group cursor-pointer">
+                          <td className="p-3 max-w-[110px] relative group cursor-pointer">
                             <div className="truncate">
                               {t.stuckReason || "-"}
                             </div>
@@ -472,20 +494,30 @@ export default function Tasks() {
                             )}
                           </td>
 
-                          <td className="p-3 max-w-[150px] relative group cursor-pointer text-xs text-blue-600">
+                          <td className="p-3 max-w-[110px] relative group cursor-pointer text-xs text-blue-600">
                             <div className="truncate">
                               {lastLog?.testerComment || "-"}
                             </div>
 
                             {lastLog?.testerComment && (
-                              <div className="absolute left-0 bottom-full mb-2 hidden group-hover:block bg-gray-900 text-white text-xs p-2 rounded shadow-xl w-[240px] z-[9999] break-words">
+                              <div className="absolute left-0 bottom-full mb-2 hidden group-hover:block bg-gray-900 text-white text-xs p-2 rounded shadow-xl w-[180px] z-[9999] break-words">
                                 {lastLog.testerComment}
                               </div>
                             )}
                           </td>
 
-                          <td className="p-3 text-xs text-red-600">
-                            {t.penaltyComment || "-"}
+                          <td className="p-3 text-xs text-red-600 max-w-[110px] relative group cursor-pointer">
+                            {/* SHORT TEXT */}
+                            <div className="truncate">
+                              {t.penaltyComment || "-"}
+                            </div>
+
+                            {/* HOVER FULL TEXT */}
+                            {t.penaltyComment && (
+                              <div className="absolute left-0 bottom-full mb-2 hidden group-hover:block bg-gray-900 text-white text-xs p-2 rounded shadow-xl w-[180px] z-[9999] break-words">
+                                {t.penaltyComment}
+                              </div>
+                            )}
                           </td>
 
                           {/* ✅ ACTION BUTTON */}
@@ -657,6 +689,84 @@ export default function Tasks() {
           editTaskData={editTaskData}
         />
       )}
+      {formModal.open && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-[99999]">
+          <div className="bg-white rounded-xl p-5 w-[450px] min-h-[120px] max-h-[80vh] overflow-y-auto shadow-xl">
+            <h2 className="text-lg font-semibold mb-3 capitalize">
+              {formModal.type}
+            </h2>
+            <FormBox
+              type={formModal.type}
+              currentValue={formModal.currentValue}
+              onSubmit={handleFormSubmit}
+              onClose={() => setFormModal({ open: false })}
+            />
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function FormBox({ type, onSubmit, onClose, currentValue }) {
+  const [form, setForm] = useState({});
+
+  return (
+    <div className="flex flex-col gap-3 ">
+      {type === "progress" && (
+        <>
+          <input
+            type="number"
+            placeholder={`Current ${currentValue}%`}
+            className="border p-2 rounded"
+            onChange={(e) =>
+              setForm({ ...form, progress: Number(e.target.value) })
+            }
+          />
+          <textarea
+            placeholder="Work done today"
+            className="border p-2 rounded"
+            onChange={(e) => setForm({ ...form, note: e.target.value })}
+          />
+        </>
+      )}
+
+      {type === "TESTING SHEET" && (
+        <input
+          placeholder="Testing sheet URL"
+          className="border p-2 rounded"
+          onChange={(e) => setForm({ ...form, url: e.target.value })}
+        />
+      )}
+
+      {type === "STUCK REASON" && (
+        <textarea
+          placeholder="Stuck reason"
+          className="border p-2 rounded"
+          onChange={(e) => setForm({ ...form, reason: e.target.value })}
+        />
+      )}
+
+      {(type === "TESTER COMMENT" || type === "PENALTY") && (
+        <textarea
+          placeholder="Enter comment"
+          className="border p-2 rounded"
+          onChange={(e) => setForm({ ...form, comment: e.target.value })}
+        />
+      )}
+
+      <div className="flex justify-end gap-2">
+        <button onClick={onClose} className="border px-3 py-1 rounded">
+          Cancel
+        </button>
+
+        <button
+          onClick={() => onSubmit(form)}
+          className="bg-indigo-600 text-white px-3 py-1 rounded"
+        >
+          Submit
+        </button>
+      </div>
     </div>
   );
 }
