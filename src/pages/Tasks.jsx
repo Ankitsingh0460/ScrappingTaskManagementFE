@@ -217,6 +217,43 @@ export default function Tasks() {
   //   ).values(),
   // ];
 
+  const filteredCount = tasks.filter((t) => {
+    if (search) {
+      if (!t.crawlerName?.toLowerCase().includes(search.toLowerCase())) {
+        return false;
+      }
+    }
+
+    if (selectedProject !== "all") {
+      let taskProjectId =
+        typeof t.projectId === "object" ? t.projectId._id : t.projectId;
+
+      if (String(taskProjectId) !== String(selectedProject)) {
+        return false;
+      }
+    }
+
+    if (selectedDeveloper !== "all") {
+      if (String(t.developer?._id) !== String(selectedDeveloper)) {
+        return false;
+      }
+    }
+
+    if (statusFilter === "completed") return t.status === "completed";
+    if (statusFilter === "in-progress") return t.status !== "completed";
+    if (statusFilter === "overdue") return getDueStatus(t) === "overdue";
+    if (statusFilter === "today") return getDueStatus(t) === "today";
+    if (statusFilter === "tomorrow") return getDueStatus(t) === "tomorrow";
+    if (statusFilter === "week") return getDueStatus(t) === "week";
+    if (statusFilter === "dev-done") return t.status === "testing";
+
+    if (statusFilter === "penalty") {
+      return t.penaltyComment && t.penaltyComment.trim() !== "";
+    }
+
+    return true;
+  }).length;
+
   return (
     <div className="flex">
       <div className="w-64 flex-shrink-0">
@@ -283,7 +320,13 @@ export default function Tasks() {
                 className="border px-3 py-2 rounded-lg text-sm w-[220px] focus:outline-none focus:ring-2 focus:ring-indigo-400"
               />
             </div>
+            <div className="flex items-center gap-2 text-sm">
+              <span className="px-2 py-1 rounded-md bg-indigo-100 text-indigo-700 font-medium">
+                Showing {filteredCount}
+              </span>
 
+              <span className="text-gray-500">/ {tasks.length} total</span>
+            </div>
             {/* RIGHT SIDE (Create Button) */}
             {user?.role === "admin" && (
               <button
