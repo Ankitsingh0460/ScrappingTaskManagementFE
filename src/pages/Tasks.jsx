@@ -251,11 +251,13 @@ export default function Tasks() {
               >
                 <option value="all">All Task</option>
                 <option value="completed">Completed</option>
-                <option value="in-progress">In Progress</option>
                 <option value="overdue">Overdue</option>
+                <option value="dev-done">Dev Done</option> {/* ✅ NEW */}
+                <option value="in-progress">In Progress</option>
                 <option value="today">Today Due</option>
                 <option value="tomorrow">Tomorrow Due</option>
                 <option value="week">This Week Due</option>
+                <option value="penalty">Penalty Crawlers</option> {/* ✅ NEW */}
               </select>
               {user?.role === "admin" && (
                 <select
@@ -371,6 +373,15 @@ export default function Tasks() {
 
                       if (statusFilter === "week") {
                         return getDueStatus(t) === "week"; // ✅ NEW
+                      }
+                      if (statusFilter === "dev-done") {
+                        return t.status === "testing";
+                      }
+
+                      if (statusFilter === "penalty") {
+                        return (
+                          t.penaltyComment && t.penaltyComment.trim() !== ""
+                        );
                       }
 
                       return true;
