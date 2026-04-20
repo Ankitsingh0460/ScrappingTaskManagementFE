@@ -18,25 +18,17 @@ export default function Dashboard() {
   };
 
   const total = tasks.length;
-  const completed = tasks.filter(t => t.status === "completed").length;
-  // const overdue = tasks.filter(
-  //   t =>
-  //     new Date(t.expectedCompletionDate) < new Date() &&
-  //     t.status !== "completed"
-  // ).length;
-  const inProgress = tasks.filter(t => t.status === "in_progress").length;
+  const completed = tasks.filter((t) => t.status === "completed").length;
+  const inProgress = tasks.filter((t) => t.status === "in_progress").length;
 
-  // ✅ UPDATED: Due status helper (FIXED LOGIC)
   const getDueStatus = (task) => {
     if (!task?.expectedCompletionDate) return null;
 
-    // ✅ If completed → no highlight
     if (task.status === "completed") return "completed";
 
     const today = new Date();
     const dueDate = new Date(task.expectedCompletionDate);
 
-    // ✅ Remove time (important fix)
     today.setHours(0, 0, 0, 0);
     dueDate.setHours(0, 0, 0, 0);
 
@@ -52,7 +44,6 @@ export default function Dashboard() {
   const sortedTasks = [...tasks].sort((a, b) => {
     const getPriority = (task) => {
       const status = getDueStatus(task);
-
       if (status === "overdue") return 0;
       if (status === "dueSoon") return 1;
       return 2;
@@ -61,163 +52,151 @@ export default function Dashboard() {
     const priorityA = getPriority(a);
     const priorityB = getPriority(b);
 
-    // Step 1: sort by priority
     if (priorityA !== priorityB) {
       return priorityA - priorityB;
     }
 
-    // Step 2: sort by date inside same group
     const dateA = new Date(a.expectedCompletionDate || 0);
     const dateB = new Date(b.expectedCompletionDate || 0);
 
     return dateA - dateB;
   });
 
-  const overdue = tasks.filter(
-  t => getDueStatus(t) === "overdue"
-).length;
+  const overdue = tasks.filter((t) => getDueStatus(t) === "overdue").length;
 
   return (
-    <div className="flex">
+    <div className="flex h-screen overflow-hidden">
+      {" "}
+      {/* ✅ UPDATED */}
       <Sidebar />
-
-      <div className="flex-1 bg-gradient-to-br from-gray-100 to-gray-200 min-h-screen">
+      <div className="flex-1 bg-gradient-to-br from-gray-100 to-gray-200 flex flex-col">
+        {" "}
+        {/* ✅ UPDATED */}
         <Header />
+        {/* ✅ SCROLLABLE AREA */}
+        <div className="overflow-y-auto flex-1">
+          {" "}
+          {/* ✅ UPDATED */}
+          {/* Cards */}
+          <div className="grid grid-cols-4 gap-6 p-6">
+            <div
+              onClick={() => navigate("/tasks")}
+              className="cursor-pointer bg-gradient-to-r from-indigo-500 to-indigo-600 text-white p-5 rounded-xl shadow-lg hover:scale-[1.02] transition"
+            >
+              <h3 className="text-sm opacity-80">Total Tasks</h3>
+              <p className="text-3xl font-bold">{total}</p>
+            </div>
 
-        {/* Cards */}
-        <div className="grid grid-cols-4 gap-6 p-6">
-          {/* Total */}
-          <div
-            onClick={() => navigate("/tasks")}
-            className="cursor-pointer bg-gradient-to-r from-indigo-500 to-indigo-600 text-white p-5 rounded-xl shadow-lg hover:scale-[1.02] transition"
-          >
-            <h3 className="text-sm opacity-80">Total Tasks</h3>
-            <p className="text-3xl font-bold">{total}</p>
+            <div
+              onClick={() => navigate("/tasks?filter=completed")}
+              className="cursor-pointer bg-gradient-to-r from-green-500 to-green-600 text-white p-5 rounded-xl shadow-lg hover:scale-[1.02] transition"
+            >
+              <h3 className="text-sm opacity-80">Completed</h3>
+              <p className="text-3xl font-bold">{completed}</p>
+            </div>
+
+            <div
+              onClick={() => navigate("/tasks?filter=overdue")}
+              className="cursor-pointer bg-gradient-to-r from-red-500 to-red-600 text-white p-5 rounded-xl shadow-lg hover:scale-[1.02] transition"
+            >
+              <h3 className="text-sm opacity-80">Overdue</h3>
+              <p className="text-3xl font-bold">{overdue}</p>
+            </div>
+
+            <div
+              onClick={() => navigate("/tasks?filter=in_progress")}
+              className="cursor-pointer bg-gradient-to-r from-yellow-400 to-orange-500 text-white p-5 rounded-xl shadow-lg hover:scale-[1.02] transition"
+            >
+              <h3 className="text-sm opacity-80">In Progress</h3>
+              <p className="text-3xl font-bold">{inProgress}</p>
+            </div>
           </div>
+          {/* Task Table */}
+          <div className="p-6">
+            <div className="bg-white p-6 rounded-xl shadow-lg">
+              <h3 className="mb-4 text-lg font-semibold">Task Overview</h3>
 
-          {/* Completed */}
-          <div
-            onClick={() => navigate("/tasks?filter=completed")}
-            className="cursor-pointer bg-gradient-to-r from-green-500 to-green-600 text-white p-5 rounded-xl shadow-lg hover:scale-[1.02] transition"
-          >
-            <h3 className="text-sm opacity-80">Completed</h3>
-            <p className="text-3xl font-bold">{completed}</p>
-          </div>
+              <table className="w-full border-collapse">
+                <thead>
+                  <tr className="bg-gray-100 text-left text-sm text-gray-600">
+                    <th className="p-3">Crawler</th>
+                    <th className="p-3">Developer</th>
+                    <th className="p-3">Status</th>
+                    <th className="p-3">Due Date</th>
+                  </tr>
+                </thead>
 
-          {/* Overdue */}
-          <div
-            onClick={() => navigate("/tasks?filter=overdue")}
-            className="cursor-pointer bg-gradient-to-r from-red-500 to-red-600 text-white p-5 rounded-xl shadow-lg hover:scale-[1.02] transition"
-          >
-            <h3 className="text-sm opacity-80">Overdue</h3>
-            <p className="text-3xl font-bold">{overdue}</p>
-          </div>
+                <tbody>
+                  {sortedTasks.map((task) => {
+                    const status = getDueStatus(task);
 
-          {/* In Progress */}
-          <div
-            onClick={() => navigate("/tasks?filter=in_progress")}
-            className="cursor-pointer bg-gradient-to-r from-yellow-400 to-orange-500 text-white p-5 rounded-xl shadow-lg hover:scale-[1.02] transition"
-          >
-            <h3 className="text-sm opacity-80">In Progress</h3>
-            <p className="text-3xl font-bold">{inProgress}</p>
-          </div>
-        </div>
+                    return (
+                      <tr
+                        key={task._id}
+                        className={`border-t transition
+                          ${
+                            status === "overdue"
+                              ? "bg-red-50 hover:bg-red-100"
+                              : status === "dueSoon"
+                                ? "bg-yellow-50 hover:bg-yellow-100"
+                                : "hover:bg-gray-50"
+                          }
+                        `}
+                      >
+                        <td className="p-3 font-medium">{task.crawlerName}</td>
 
-        {/* Task Table */}
-        <div className="p-6">
-          <div className="bg-white p-6 rounded-xl shadow-lg">
-            <h3 className="mb-4 text-lg font-semibold">
-              Task Overview
-            </h3>
+                        <td className="p-3">{task.developer?.name || "-"}</td>
 
-            <table className="w-full border-collapse">
-              <thead>
-                <tr className="bg-gray-100 text-left text-sm text-gray-600">
-                  <th className="p-3">Crawler</th>
-                  <th className="p-3">Developer</th>
-                  <th className="p-3">Status</th>
-                  <th className="p-3">Due Date</th>
-                </tr>
-              </thead>
-
-              <tbody>
-                {sortedTasks.map(task => {
-                  const status = getDueStatus(task);
-
-                  return (
-                    <tr
-                      key={task._id}
-                      className={`border-t transition
-                        ${
-                          status === "overdue"
-                            ? "bg-red-50 hover:bg-red-100"
-                            : status === "dueSoon"
-                            ? "bg-yellow-50 hover:bg-yellow-100"
-                            : "hover:bg-gray-50"
-                        }
-                      `}
-                    >
-                      <td className="p-3 font-medium">
-                        {task.crawlerName}
-                      </td>
-
-                      <td className="p-3">
-                        {task.developer?.name || "-"}
-                      </td>
-
-                      {/* Status Badge */}
-                      <td className="p-3">
-                        <span
-                          className={`px-3 py-1 rounded-full text-xs font-semibold
-                            ${
-                              task.status === "completed"
-                                ? "bg-green-100 text-green-600"
-                                : task.status === "in_progress"
-                                ? "bg-yellow-100 text-yellow-600"
-                                : task.status === "testing"
-                                ? "bg-blue-100 text-blue-600"
-                                : "bg-gray-100 text-gray-600"
-                            }
-                          `}
-                        >
-                          {task.status}
-                        </span>
-                      </td>
-
-                      {/* Due Date */}
-                      <td className="p-3 text-sm font-medium">
-                        {task.expectedCompletionDate ? (
+                        <td className="p-3">
                           <span
-                            className={`px-2 py-1 rounded-md text-xs font-semibold
+                            className={`px-3 py-1 rounded-full text-xs font-semibold
                               ${
-                                status === "overdue"
-                                  ? "bg-red-100 text-red-500"
-                                  : status === "dueSoon"
-                                  ? "bg-yellow-100 text-yellow-600"
-                                  : "text-gray-500"
+                                task.status === "completed"
+                                  ? "bg-green-100 text-green-600"
+                                  : task.status === "in_progress"
+                                    ? "bg-yellow-100 text-yellow-600"
+                                    : task.status === "testing"
+                                      ? "bg-blue-100 text-blue-600"
+                                      : "bg-gray-100 text-gray-600"
                               }
                             `}
                           >
-                            {new Date(
-                              task.expectedCompletionDate
-                            ).toDateString()}
-
-                            {status === "overdue" && " ❌ Overdue"}
-                            {status === "dueSoon" && " ⚠️ Due Soon"}
+                            {task.status}
                           </span>
-                        ) : (
-                          "-"
-                        )}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+                        </td>
 
+                        <td className="p-3 text-sm font-medium">
+                          {task.expectedCompletionDate ? (
+                            <span
+                              className={`px-2 py-1 rounded-md text-xs font-semibold
+                                ${
+                                  status === "overdue"
+                                    ? "bg-red-100 text-red-500"
+                                    : status === "dueSoon"
+                                      ? "bg-yellow-100 text-yellow-600"
+                                      : "text-gray-500"
+                                }
+                              `}
+                            >
+                              {new Date(
+                                task.expectedCompletionDate,
+                              ).toDateString()}
+
+                              {status === "overdue" && " ❌ Overdue"}
+                              {status === "dueSoon" && " ⚠️ Due Soon"}
+                            </span>
+                          ) : (
+                            "-"
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
-
       </div>
     </div>
   );
