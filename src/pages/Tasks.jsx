@@ -186,6 +186,7 @@ export default function Tasks() {
 
   // ✅ ADD THIS BELOW useNavigate()
   const getDueStatus = (task) => {
+    if (task.status === "hold") return null;
     if (!task?.expectedCompletionDate) return null;
 
     if (task.status === "completed") return "completed";
@@ -216,6 +217,11 @@ export default function Tasks() {
   //       .map((t) => [t.developer._id, t.developer]),
   //   ).values(),
   // ];
+
+  const markHold = async (id) => {
+    await axios.put(`/tasks/${id}/hold`); // 👈 backend API
+    fetchTasks();
+  };
 
   const filteredCount = tasks.filter((t) => {
     if (search) {
@@ -289,6 +295,7 @@ export default function Tasks() {
                 <option value="all">All Task</option>
                 <option value="completed">Completed</option>
                 <option value="overdue">Overdue</option>
+                <option value="hold">On Hold</option>
                 <option value="dev-done">Dev Done</option> {/* ✅ NEW */}
                 <option value="in-progress">In Progress</option>
                 <option value="today">Today Due</option>
@@ -344,19 +351,21 @@ export default function Tasks() {
               <table className="w-full text-sm border-collapse">
                 <thead className="sticky top-0 z-20 bg-gray-100">
                   <tr className="bg-gray-100">
-                    <th className="p-3 w-[140px] text-center">Crawler</th>
-                    <th className="p-3 w-[140px] text-center">Project</th>
-                    <th className="p-3 w-[140px] text-center">Developer</th>
-                    <th className="p-3 w-[140px] text-center">Tester</th>
+                    <th className="p-3 w-[120px] text-center">Crawler</th>
+                    <th className="p-3 w-[120px] text-center">Project</th>
+                    <th className="p-3 w-[120px] text-center">Developer</th>
+                    <th className="p-3 w-[120px] text-center">Tester</th>
                     <th className="p-3 w-[120px] text-center">Assign</th>
                     <th className="p-3 w-[120px] text-center">Due</th>
                     <th className="p-3 w-[140px] text-center">Progress</th>
                     <th className="p-3 w-[120px] text-center">Status</th>
-                    <th className="p-3">Stuck Reason</th>
-                    <th className="p-3">Testing Sheet</th>
-                    <th className="p-3">Tester Comment</th>
-                    <th className="p-3">Penalty</th>
-                    <th className="p-3">Action</th>
+                    <th className="p-3 w-[120px] text-center">Stuck Reason</th>
+                    <th className="p-3 w-[120px] text-center">Testing Sheet</th>
+                    <th className="p-3 w-[120px] text-center">
+                      Tester Comment
+                    </th>
+                    <th className="p-3 w-[120px] text-center">Penalty</th>
+                    <th className="p-3 w-[120px] text-center">Action</th>
                   </tr>
                 </thead>
 
@@ -420,6 +429,7 @@ export default function Tasks() {
                       if (statusFilter === "dev-done") {
                         return t.status === "testing";
                       }
+                      if (statusFilter === "hold") return t.status === "hold";
 
                       if (statusFilter === "penalty") {
                         return (
@@ -439,7 +449,9 @@ export default function Tasks() {
     ${dueStatus === "overdue" ? "" : dueStatus === "today" ? "" : ""}
   `}
                         >
-                          <td className="p-3 text-center">{t.crawlerName}</td>
+                          <td className="p-3 text-center max-w-[160px] break-words whitespace-normal">
+                            {t.crawlerName}
+                          </td>
                           <td className="p-3 text-center relative group max-w-[140px]">
                             <div className="truncate">
                               {getProjectName(t.projectId)}
@@ -459,7 +471,7 @@ export default function Tasks() {
                             {formatDate(t.assignDate)}
                           </td>
                           <td className="p-3 text-center">
-                            {t.expectedCompletionDate ? (
+                            {t.expectedCompletionDate && t.status !== "hold" ? (
                               <span
                                 className={`px-2 py-1 rounded text-xs font-semibold flex items-center justify-center inline-block
   ${
@@ -491,7 +503,7 @@ export default function Tasks() {
                           </td>
 
                           <td
-                            className="p-3 w-[80px] cursor-pointer hover:bg-gray-50"
+                            className="p-3 w-[80px] max-w-[100px] cursor-pointer hover:bg-gray-50"
                             onClick={() => navigate(`/tasks/${t._id}`)}
                           >
                             <div className="bg-gray-200 h-1.5 rounded ">
@@ -520,13 +532,24 @@ export default function Tasks() {
                             </div>
                           </td>
 
-                          <td className="p-3">
-                            <span className="px-2 py-1 rounded text-xs font-semibold">
-                              {t.status}
+                          <td className="p-3 text-center">
+                            <span
+                              className={`inline-flex items-center justify-center w-[80px] px-2 py-1 rounded text-[10px] font-semibold
+      ${
+        t.status === "completed"
+          ? "bg-green-100 text-green-600"
+          : t.status === "testing"
+            ? "bg-blue-100 text-blue-600"
+            : t.status === "hold"
+              ? "bg-red-100 text-red-600"
+              : "bg-gray-100 text-gray-600"
+      }
+    `}
+                            >
+                              {t.status.toUpperCase()}
                             </span>
                           </td>
-
-                          <td className="p-3 max-w-[110px] relative group cursor-pointer">
+                          <td className="p-3 max-w-[120px] relative group cursor-pointer">
                             <div className="truncate">
                               {t.stuckReason || "-"}
                             </div>
@@ -538,7 +561,7 @@ export default function Tasks() {
                             )}
                           </td>
 
-                          <td className="p-3">
+                          <td className="p-3  max-w-[120px]">
                             {t.testingSheetUrl ? (
                               <a href={t.testingSheetUrl} target="_blank">
                                 View
@@ -548,7 +571,7 @@ export default function Tasks() {
                             )}
                           </td>
 
-                          <td className="p-3 max-w-[110px] relative group cursor-pointer text-xs text-blue-600">
+                          <td className="p-3 max-w-[120px] relative group cursor-pointer text-xs text-blue-600">
                             <div className="truncate">
                               {lastLog?.testerComment || "-"}
                             </div>
@@ -560,7 +583,7 @@ export default function Tasks() {
                             )}
                           </td>
 
-                          <td className="p-3 text-xs text-red-600 max-w-[110px] relative group cursor-pointer">
+                          <td className="p-3 text-xs text-red-600 max-w-[120px] relative group cursor-pointer">
                             {/* SHORT TEXT */}
                             <div className="truncate">
                               {t.penaltyComment || "-"}
@@ -575,7 +598,7 @@ export default function Tasks() {
                           </td>
 
                           {/* ✅ ACTION BUTTON */}
-                          <td className="p-3">
+                          <td className="p-3  max-w-[120px]">
                             {(user?.role === "developer" ||
                               user?.role === "admin") && (
                               <button
@@ -585,17 +608,15 @@ export default function Tasks() {
                                   const rect =
                                     e.currentTarget.getBoundingClientRect();
 
-                                  const dropdownHeight = 150; // approx height of menu
-
+                                  const estimatedHeight = 200;
                                   let top = rect.bottom;
-                                  let left = rect.right;
+                                  let left = rect.right; // ✅ anchor to RIGHT side of button
 
-                                  // 🔥 if no space at bottom → open upward
                                   if (
                                     window.innerHeight - rect.bottom <
-                                    dropdownHeight
+                                    estimatedHeight
                                   ) {
-                                    top = rect.top - dropdownHeight;
+                                    top = rect.top - estimatedHeight;
                                   }
 
                                   setMenuPosition({
@@ -620,10 +641,10 @@ export default function Tasks() {
                                 onClick={(e) => e.stopPropagation()}
                                 style={{
                                   position: "fixed",
-                                  top: menuPosition.y + 5, // ✅ IMPORTANT (you removed this)
-                                  left: menuPosition.x - 180,
+                                  top: menuPosition.y + 5,
+                                  right: window.innerWidth - menuPosition.x, // ✅ KEY FIX
                                 }}
-                                className="w-[200px] bg-white border rounded-xl shadow-2xl z-[99999]"
+                                className="w-[200px] max-h-[180px] overflow-y-auto bg-white border rounded-xl text-sm shadow-2xl z-[99999]"
                               >
                                 {/* 👨‍💻 DEVELOPER */}
                                 {user?.role === "developer" && (
@@ -633,7 +654,7 @@ export default function Tasks() {
                                         updateProgress(t._id, t.progress || 0);
                                         setOpenMenu(null);
                                       }}
-                                      className="flex items-center gap-2 w-full px-4 py-2 text-sm hover:bg-gray-100 text-blue-600"
+                                      className="flex items-center gap-2 w-full px-4 py-2 text-sm hover:bg-gray-100 text-blue-600 "
                                     >
                                       🔄 Update Progress
                                     </button>
@@ -686,6 +707,15 @@ export default function Tasks() {
                                         ✅ Verify
                                       </button>
                                     )}
+                                    <button
+                                      onClick={() => {
+                                        markHold(t._id);
+                                        setOpenMenu(null);
+                                      }}
+                                      className="flex items-center gap-2 w-full px-4 py-2 text-sm hover:bg-gray-100 text-red-600"
+                                    >
+                                      ⏸ Hold
+                                    </button>
 
                                     <button
                                       onClick={() => {
