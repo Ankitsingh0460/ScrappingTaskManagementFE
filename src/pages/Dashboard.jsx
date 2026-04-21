@@ -8,7 +8,7 @@ export default function Dashboard() {
   const [tasks, setTasks] = useState([]);
   const navigate = useNavigate();
   const [currentPage, setCurrentPage] = useState(1);
-  const tasksPerPage = 15;
+  const tasksPerPage = 12;
 
   useEffect(() => {
     fetchTasks();
@@ -25,7 +25,7 @@ export default function Dashboard() {
 
   const getDueStatus = (task) => {
     if (!task?.expectedCompletionDate) return null;
-
+    if (task.status === "hold") return "hold";
     if (task.status === "completed") return "completed";
 
     const today = new Date();
@@ -46,9 +46,11 @@ export default function Dashboard() {
   const sortedTasks = [...tasks].sort((a, b) => {
     const getPriority = (task) => {
       const status = getDueStatus(task);
+
       if (status === "overdue") return 0;
       if (status === "dueSoon") return 1;
-      return 2;
+      if (status === "hold") return 2; // ✅ separate priority
+      return 3;
     };
 
     const priorityA = getPriority(a);
@@ -60,6 +62,12 @@ export default function Dashboard() {
 
     const dateA = new Date(a.expectedCompletionDate || 0);
     const dateB = new Date(b.expectedCompletionDate || 0);
+
+    // overdue → latest first
+    if (priorityA === 0) return dateB - dateA;
+
+    // due soon → nearest first
+    if (priorityA === 1) return dateA - dateB;
 
     return dateA - dateB;
   });

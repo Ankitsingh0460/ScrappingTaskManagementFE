@@ -10,11 +10,17 @@ export default function Tasks() {
   const [showModal, setShowModal] = useState(false);
   const [openMenu, setOpenMenu] = useState(null);
   const [projects, setProjects] = useState([]);
-  const [search, setSearch] = useState("");
+  const [search, setSearch] = useState(localStorage.getItem("search") || "");
   const [editTaskData, setEditTaskData] = useState(null);
-  const [selectedProject, setSelectedProject] = useState("all");
-  const [statusFilter, setStatusFilter] = useState("all");
-  const [selectedDeveloper, setSelectedDeveloper] = useState("all");
+  const [selectedProject, setSelectedProject] = useState(
+    localStorage.getItem("selectedProject") || "all",
+  );
+  const [statusFilter, setStatusFilter] = useState(
+    localStorage.getItem("statusFilter") || "all",
+  );
+  const [selectedDeveloper, setSelectedDeveloper] = useState(
+    localStorage.getItem("selectedDeveloper") || "all",
+  );
   const [developers, setDevelopers] = useState([]);
   const [formModal, setFormModal] = useState({
     open: false,
@@ -49,8 +55,12 @@ export default function Tasks() {
 
   useEffect(() => {
     fetchTasks();
-    fetchProjects(); // 👈 ADD THIS
-    fetchDevelopers();
+    fetchProjects();
+
+    // ✅ Only admin can fetch developers
+    if (user?.role === "admin") {
+      fetchDevelopers();
+    }
   }, []);
 
   const fetchProjects = async () => {
@@ -260,6 +270,23 @@ export default function Tasks() {
     return true;
   }).length;
 
+  // ✅ SAVE FILTERS TO LOCALSTORAGE
+  useEffect(() => {
+    localStorage.setItem("search", search);
+  }, [search]);
+
+  useEffect(() => {
+    localStorage.setItem("selectedProject", selectedProject);
+  }, [selectedProject]);
+
+  useEffect(() => {
+    localStorage.setItem("statusFilter", statusFilter);
+  }, [statusFilter]);
+
+  useEffect(() => {
+    localStorage.setItem("selectedDeveloper", selectedDeveloper);
+  }, [selectedDeveloper]);
+
   return (
     <div className="flex">
       <div className="w-64 flex-shrink-0">
@@ -294,9 +321,11 @@ export default function Tasks() {
               >
                 <option value="all">All Task</option>
                 <option value="completed">Completed</option>
-                <option value="overdue">Overdue</option>
+                <option value="overdue">Over Due</option>
                 <option value="hold">On Hold</option>
-                <option value="dev-done">Dev Done</option> {/* ✅ NEW */}
+                {user?.role === "admin" && (
+                  <option value="dev-done">Dev Done</option>
+                )}
                 <option value="in-progress">In Progress</option>
                 <option value="today">Today Due</option>
                 <option value="tomorrow">Tomorrow Due</option>

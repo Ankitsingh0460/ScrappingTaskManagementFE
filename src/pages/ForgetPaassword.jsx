@@ -6,7 +6,7 @@ export default function ForgotPassword() {
   const [email, setEmail] = useState("");
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
-  const [sent, setSent] = useState(false); // ✅ NEW
+  const [sent, setSent] = useState(false);
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
@@ -23,85 +23,85 @@ export default function ForgotPassword() {
       const res = await axios.post("/auth/forgot-password", { email });
 
       setMessage(res.data.msg || "New password sent to your email ✅");
-      setSent(true); // ✅ mark as sent
+      setSent(true);
     } catch (err) {
-      setMessage(
-        err.response?.data?.msg || "Something went wrong ❌"
-      );
+      setMessage(err.response?.data?.msg || "Something went wrong ❌");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="h-screen flex items-center justify-center bg-gray-100">
-      <div className="bg-white p-8 rounded-2xl shadow-md w-[420px]">
-
-        <h2 className="text-2xl font-semibold mb-2">
-          Forgot Password
+    <div className="h-screen flex items-center justify-center bg-gradient-to-br from-blue-100 via-white to-yellow-100">
+      <div className="bg-white p-8 rounded-2xl shadow-xl w-[420px] border">
+        <div className="flex justify-between items-center mb-4">
+          <button
+            onClick={() => navigate("/")}
+            className="text-sm text-blue-600 hover:underline"
+          >
+            ← Back to LogIn
+          </button>
+        </div>
+        {/* TITLE */}
+        <h2 className="text-2xl font-semibold mb-1 text-center">
+          <span className="text-blue-500">Blu</span>
+          <span className="text-yellow-500">Desk</span>
         </h2>
 
-        <p className="text-gray-500 mb-6">
-          Enter your email to receive a new password
+        <p className="text-gray-500 text-center mb-6 text-sm">
+          Forgot your password? No worries 👌
         </p>
 
-      <form onSubmit={handleSubmit}>
-  <label className="block mb-1 text-sm font-medium">
-    Email
-  </label>
+        {/* FORM */}
+        <form onSubmit={handleSubmit}>
+          <label className="block mb-1 text-sm font-medium">Email</label>
 
-  <input
-    type="email"
-    placeholder="Enter your Email"
-    value={email}
-    disabled={sent}
-    className="w-full p-3 mb-4 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-    onChange={(e) => setEmail(e.target.value)}
-  />
+          <input
+            type="email"
+            placeholder="Enter your Email"
+            value={email}
+            disabled={sent}
+            className="w-full p-3 mb-4 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
+            onChange={(e) => setEmail(e.target.value)}
+          />
 
-  {/* ✅ SHOW ONLY BEFORE SENT */}
-  {!sent && (
-    <button
-      type="submit"
-      disabled={loading}
-      className="w-full bg-indigo-600 hover:bg-indigo-700 text-white p-3 rounded-lg"
-    >
-      {loading ? "Sending..." : "Send New Password"}
-    </button>
-  )}
-</form>
+          {!sent && (
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full bg-gradient-to-r from-blue-500 to-yellow-400 hover:opacity-90 text-white p-3 rounded-lg font-medium transition disabled:opacity-50"
+            >
+              {loading ? "Sending..." : "Send New Password"}
+            </button>
+          )}
+        </form>
 
-        {/* ✅ MESSAGE */}
+        {/* MESSAGE */}
         {message && (
-          <p className="mt-4 text-center text-sm text-gray-600">
-            {message}
-          </p>
+          <p className="mt-4 text-center text-sm text-gray-600">{message}</p>
         )}
 
-        {/* ✅ NEW BUTTONS AFTER EMAIL SENT */}
+        {/* ACTION BUTTONS */}
         {sent && (
-          <div className="mt-4 flex justify-between gap-2">
+          <div className="mt-5 flex gap-2">
+            {/* RESEND */}
+            <button
+              onClick={handleSubmit}
+              disabled={loading}
+              className="w-full bg-gray-100 hover:bg-gray-200 text-gray-700 py-2 rounded-lg text-sm"
+            >
+              {loading ? "Sending..." : "🔁 Resend"}
+            </button>
 
-            {/* 🔁 RESEND */}
-         <button
-  onClick={handleSubmit}
-  disabled={loading}
-  className="w-full bg-gray-200 hover:bg-gray-300 text-gray-800 py-2 rounded-lg text-sm"
->
-  {loading ? "Sending..." : "🔁 Resend"}
-</button>
-
-            {/* 🔐 LOGIN */}
+            {/* LOGIN */}
             <button
               onClick={() => navigate("/login")}
               className="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-2 rounded-lg text-sm"
             >
               🔐 Login
             </button>
-
           </div>
         )}
-
       </div>
     </div>
   );
