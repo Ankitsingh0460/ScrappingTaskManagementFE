@@ -8,9 +8,13 @@ export default function Header() {
     <div className="flex justify-between items-center p-2 bg-white shadow">
       <h2>Dashboard</h2>
 
-      <div className="flex gap-4 justify-center items-center">
+      <div className="flex gap-4 justify-center items-center mr-[1rem]">
         <span>Welcome {user?.name}</span>
-        <button className="bg-red-400 hover:bg-red-500 text-white py-2 px-2 rounded text-sm" onClick={logout}>
+        <button
+          className="bg-red-400 hover:bg-red-500 text-white py-2 px-2 mr-2
+           rounded text-sm"
+          onClick={logout}
+        >
           Logout
         </button>
       </div>

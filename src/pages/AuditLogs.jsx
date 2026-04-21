@@ -5,6 +5,10 @@ import Header from "../components/Header";
 
 export default function AuditLogs() {
   const [logs, setLogs] = useState([]);
+  const [currentPage, setCurrentPage] = useState(1);
+
+  const logsPerPage = 20;
+  const pagesToShow = 4;
 
   useEffect(() => {
     fetchLogs();
@@ -15,22 +19,37 @@ export default function AuditLogs() {
     setLogs(res.data);
   };
 
+  // ✅ Pagination Logic
+  const totalPages = Math.ceil(logs.length / logsPerPage);
+
+  const indexOfLast = currentPage * logsPerPage;
+  const indexOfFirst = indexOfLast - logsPerPage;
+
+  const currentLogs = logs.slice(indexOfFirst, indexOfLast);
+
+  // ✅ Dynamic 4-page window
+  const startPage =
+    Math.floor((currentPage - 1) / pagesToShow) * pagesToShow + 1;
+
+  const endPage = Math.min(startPage + pagesToShow - 1, totalPages);
+
+  const visiblePages = [];
+  for (let i = startPage; i <= endPage; i++) {
+    visiblePages.push(i);
+  }
+
   return (
     <div className="flex h-screen overflow-hidden">
-      {" "}
-      {/* ✅ UPDATED */}
       <div className="w-64">
         <Sidebar />
       </div>
+
       <div className="flex-1 bg-gray-100 flex flex-col">
-        {" "}
-        {/* ✅ UPDATED */}
         <Header />
-        {/* ✅ SCROLL AREA */}
+
         <div className="p-6 overflow-y-auto flex-1">
-          {" "}
-          {/* ✅ UPDATED */}
           <h2 className="text-xl font-semibold mb-4">Audit Logs</h2>
+
           <div className="bg-white rounded-xl shadow p-4">
             <table className="w-full text-sm table-fixed">
               <thead>
@@ -44,7 +63,7 @@ export default function AuditLogs() {
               </thead>
 
               <tbody>
-                {logs.map((log) => (
+                {currentLogs.map((log) => (
                   <tr key={log._id} className="border-t text-left">
                     <td className="p-3">{log.user?.name}</td>
                     <td className="p-3">{log.action}</td>
@@ -62,6 +81,62 @@ export default function AuditLogs() {
                 ))}
               </tbody>
             </table>
+
+            {/* ✅ Pagination UI */}
+            <div className="flex justify-center items-center mt-6 gap-2">
+              {/* Prev */}
+              <button
+                disabled={currentPage === 1}
+                onClick={() => setCurrentPage((prev) => prev - 1)}
+                className="px-3 py-1 rounded-md bg-gray-200 disabled:opacity-50"
+              >
+                Prev
+              </button>
+
+              {/* Jump Back */}
+              {startPage > 1 && (
+                <button
+                  onClick={() => setCurrentPage(startPage - 1)}
+                  className="px-2"
+                >
+                  ...
+                </button>
+              )}
+
+              {/* Page Numbers */}
+              {visiblePages.map((page) => (
+                <button
+                  key={page}
+                  onClick={() => setCurrentPage(page)}
+                  className={`px-3 py-1 rounded-md ${
+                    currentPage === page
+                      ? "bg-indigo-500 text-white"
+                      : "bg-gray-100"
+                  }`}
+                >
+                  {page}
+                </button>
+              ))}
+
+              {/* Jump Forward */}
+              {endPage < totalPages && (
+                <button
+                  onClick={() => setCurrentPage(endPage + 1)}
+                  className="px-2"
+                >
+                  ...
+                </button>
+              )}
+
+              {/* Next */}
+              <button
+                disabled={currentPage === totalPages}
+                onClick={() => setCurrentPage((prev) => prev + 1)}
+                className="px-3 py-1 rounded-md bg-gray-200 disabled:opacity-50"
+              >
+                Next
+              </button>
+            </div>
           </div>
         </div>
       </div>

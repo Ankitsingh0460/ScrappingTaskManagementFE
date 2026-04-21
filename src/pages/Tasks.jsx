@@ -252,7 +252,7 @@ export default function Tasks() {
     if (statusFilter === "tomorrow") return getDueStatus(t) === "tomorrow";
     if (statusFilter === "week") return getDueStatus(t) === "week";
     if (statusFilter === "dev-done") return t.status === "testing";
-
+    if (statusFilter === "hold") return t.status === "hold";
     if (statusFilter === "penalty") {
       return t.penaltyComment && t.penaltyComment.trim() !== "";
     }
