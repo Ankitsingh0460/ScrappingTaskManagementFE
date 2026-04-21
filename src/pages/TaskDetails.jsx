@@ -81,7 +81,20 @@ export default function TaskDetails() {
                       <td className="p-3 text-center align-middle font-medium">
                         {log?.progress !== null &&
                         log?.progress !== undefined ? (
-                          `${log.progress}%`
+                          i > 0 &&
+                          task.progressLogs[i - 1]?.progress !== undefined ? (
+                            <>
+                              <span className="text-gray-500">
+                                {task.progressLogs[i - 1].progress}%
+                              </span>
+                              <span className="mx-1">→</span>
+                              <span className="text-indigo-600 font-semibold">
+                                {log.progress}%
+                              </span>
+                            </>
+                          ) : (
+                            `${log.progress}%`
+                          )
                         ) : (
                           <span className="text-gray-400">-</span>
                         )}

@@ -9,7 +9,7 @@ export default function CreateTask({ onClose, refresh, editTaskData }) {
     tester: "",
     assignDate: "",
     expectedCompletionDate: "",
-    testingSheetUrl: ""
+    testingSheetUrl: "",
   });
 
   const [users, setUsers] = useState([]);
@@ -20,7 +20,6 @@ export default function CreateTask({ onClose, refresh, editTaskData }) {
     fetchData();
   }, []);
 
-  // ✅ PREFILL FOR EDIT
   useEffect(() => {
     if (editTaskData) {
       setForm({
@@ -34,7 +33,7 @@ export default function CreateTask({ onClose, refresh, editTaskData }) {
         assignDate: editTaskData.assignDate?.slice(0, 10) || "",
         expectedCompletionDate:
           editTaskData.expectedCompletionDate?.slice(0, 10) || "",
-        testingSheetUrl: editTaskData.testingSheetUrl || ""
+        testingSheetUrl: editTaskData.testingSheetUrl || "",
       });
     }
   }, [editTaskData]);
@@ -51,7 +50,6 @@ export default function CreateTask({ onClose, refresh, editTaskData }) {
     e.preventDefault();
     setError("");
 
-    // ✅ VALIDATION ONLY FOR CREATE
     if (!editTaskData) {
       const {
         crawlerName,
@@ -59,7 +57,7 @@ export default function CreateTask({ onClose, refresh, editTaskData }) {
         developer,
         tester,
         assignDate,
-        expectedCompletionDate
+        expectedCompletionDate,
       } = form;
 
       if (
@@ -91,27 +89,34 @@ export default function CreateTask({ onClose, refresh, editTaskData }) {
   };
 
   return (
-    <div className="fixed inset-0 z-[99999] flex items-center justify-center bg-black/40">
-      <div className="bg-white p-6 rounded-xl w-[600px] shadow-lg">
-
-        <h2 className="text-xl font-semibold mb-4">
+    <div className="fixed inset-0 z-[99999] flex items-center justify-center bg-black/40 backdrop-blur-sm">
+      {/* MODAL */}
+      <div className="bg-white/95 backdrop-blur-md p-6 rounded-2xl w-[620px] shadow-2xl border">
+        {/* HEADER */}
+        <h2 className="text-xl font-semibold mb-4 text-center">
+          <span className="text-blue-500">Blu</span>
+          <span className="text-yellow-500">Desk</span>{" "}
           {editTaskData ? "Edit Task" : "Create Task"}
         </h2>
 
-        {/* ✅ ERROR */}
-        {error && <p className="text-red-500 mb-3">{error}</p>}
+        {/* ERROR */}
+        {error && (
+          <p className="text-red-500 mb-3 text-sm text-center">{error}</p>
+        )}
 
-       <form className="grid grid-cols-2 gap-2 text-sm" onSubmit={handleSubmit}>
-
+        <form
+          className="grid grid-cols-2 gap-3 text-sm"
+          onSubmit={handleSubmit}
+        >
           {/* Crawler Name */}
           <div className="col-span-2">
-            <label className="text-sm font-medium">
+            <label className="font-medium">
               Crawler Name {!editTaskData && "*"}
             </label>
             <input
               value={form.crawlerName}
-              placeholder="Crawler Name"
-                className="w-full px-2 py-1.5 border rounded mt-1 text-sm"
+              placeholder="Enter crawler name"
+              className="w-full px-3 py-2 border rounded-lg mt-1 focus:ring-2 focus:ring-blue-400 outline-none"
               onChange={(e) =>
                 setForm({ ...form, crawlerName: e.target.value })
               }
@@ -120,18 +125,16 @@ export default function CreateTask({ onClose, refresh, editTaskData }) {
 
           {/* Project */}
           <div>
-            <label className="text-sm font-medium">
+            <label className="font-medium">
               Project {!editTaskData && "*"}
             </label>
             <select
               value={form.projectId}
-              className="w-full px-2 py-1.5 border rounded mt-1 text-sm"
-              onChange={(e) =>
-                setForm({ ...form, projectId: e.target.value })
-              }
+              className="w-full px-3 py-2 border rounded-lg mt-1 focus:ring-2 focus:ring-blue-400"
+              onChange={(e) => setForm({ ...form, projectId: e.target.value })}
             >
               <option value="">Select Project</option>
-              {projects.map(p => (
+              {projects.map((p) => (
                 <option key={p._id} value={p._id}>
                   {p.name}
                 </option>
@@ -141,20 +144,18 @@ export default function CreateTask({ onClose, refresh, editTaskData }) {
 
           {/* Developer */}
           <div>
-            <label className="text-sm font-medium">
+            <label className="font-medium">
               Developer {!editTaskData && "*"}
             </label>
             <select
               value={form.developer}
-             className="w-full px-2 py-1.5 border rounded mt-1 text-sm"
-              onChange={(e) =>
-                setForm({ ...form, developer: e.target.value })
-              }
+              className="w-full px-3 py-2 border rounded-lg mt-1 focus:ring-2 focus:ring-blue-400"
+              onChange={(e) => setForm({ ...form, developer: e.target.value })}
             >
               <option value="">Select Developer</option>
               {users
-                .filter(u => u.role === "developer")
-                .map(u => (
+                .filter((u) => u.role === "developer")
+                .map((u) => (
                   <option key={u._id} value={u._id}>
                     {u.name}
                   </option>
@@ -164,20 +165,16 @@ export default function CreateTask({ onClose, refresh, editTaskData }) {
 
           {/* Tester */}
           <div>
-            <label className="text-sm font-medium">
-              Tester {!editTaskData && "*"}
-            </label>
+            <label className="font-medium">Tester {!editTaskData && "*"}</label>
             <select
               value={form.tester}
-             className="w-full px-2 py-1.5 border rounded mt-1 text-sm"
-              onChange={(e) =>
-                setForm({ ...form, tester: e.target.value })
-              }
+              className="w-full px-3 py-2 border rounded-lg mt-1 focus:ring-2 focus:ring-blue-400"
+              onChange={(e) => setForm({ ...form, tester: e.target.value })}
             >
               <option value="">Select Tester</option>
               {users
-                .filter(u => u.role === "developer")
-                .map(u => (
+                .filter((u) => u.role === "developer")
+                .map((u) => (
                   <option key={u._id} value={u._id}>
                     {u.name}
                   </option>
@@ -187,47 +184,43 @@ export default function CreateTask({ onClose, refresh, editTaskData }) {
 
           {/* Assign Date */}
           <div>
-            <label className="text-sm font-medium">
+            <label className="font-medium">
               Assign Date {!editTaskData && "*"}
             </label>
             <input
               type="date"
               value={form.assignDate}
-             className="w-full px-2 py-1.5 border rounded mt-1 text-sm"
-              onChange={(e) =>
-                setForm({ ...form, assignDate: e.target.value })
-              }
+              className="w-full px-3 py-2 border rounded-lg mt-1"
+              onChange={(e) => setForm({ ...form, assignDate: e.target.value })}
             />
           </div>
 
           {/* Due Date */}
           <div>
-            <label className="text-sm font-medium">
+            <label className="font-medium">
               Due Date {!editTaskData && "*"}
             </label>
             <input
               type="date"
               value={form.expectedCompletionDate}
-             className="w-full px-2 py-1.5 border rounded mt-1 text-sm"
+              className="w-full px-3 py-2 border rounded-lg mt-1"
               onChange={(e) =>
                 setForm({
                   ...form,
-                  expectedCompletionDate: e.target.value
+                  expectedCompletionDate: e.target.value,
                 })
               }
             />
           </div>
 
-          {/* ✅ ONLY SHOW IN EDIT */}
+          {/* EDIT ONLY */}
           {editTaskData && (
             <div className="col-span-2">
-              <label className="text-sm font-medium">
-                Testing Sheet URL
-              </label>
+              <label className="font-medium">Testing Sheet URL</label>
               <input
                 value={form.testingSheetUrl}
-                placeholder="Testing Sheet URL"
-                className="w-full p-3 border rounded mt-1"
+                placeholder="Enter URL"
+                className="w-full px-3 py-2 border rounded-lg mt-1"
                 onChange={(e) =>
                   setForm({ ...form, testingSheetUrl: e.target.value })
                 }
@@ -235,24 +228,23 @@ export default function CreateTask({ onClose, refresh, editTaskData }) {
             </div>
           )}
 
-          {/* Buttons */}
+          {/* BUTTONS */}
           <div className="col-span-2 flex justify-end gap-3 mt-4">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 border rounded"
+              className="px-4 py-2 rounded-lg border hover:bg-gray-100"
             >
               Cancel
             </button>
 
             <button
               type="submit"
-              className="px-4 py-2 bg-indigo-600 text-white rounded"
+              className="px-4 py-2 rounded-lg text-white bg-gradient-to-r from-blue-500 to-yellow-400 hover:opacity-90 transition"
             >
               {editTaskData ? "Update" : "Create"}
             </button>
           </div>
-
         </form>
       </div>
     </div>

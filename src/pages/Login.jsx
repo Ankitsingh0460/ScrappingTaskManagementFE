@@ -22,24 +22,21 @@ export default function Login() {
 
       const res = await axios.post("/auth/login", {
         email,
-        password
+        password,
       });
 
       login(res.data);
 
-      // ✅ 🔥 FORCE PASSWORD CHANGE CHECK
       if (res.data.forcePasswordChange) {
         navigate("/change-password");
         return;
       }
 
-      // ✅ NORMAL FLOW
       if (res.data.user.role === "admin") {
         navigate("/dashboard");
       } else {
         navigate("/my-tasks");
       }
-
     } catch (err) {
       setError(err.response?.data?.msg || "Login failed");
     } finally {
@@ -48,51 +45,58 @@ export default function Login() {
   };
 
   return (
-    <div className="h-screen flex items-center justify-center bg-gray-100">
+    <div className="h-screen flex items-center justify-center bg-gradient-to-br from-blue-100 via-white to-yellow-100">
+      {/* CARD */}
+      <div className="bg-white p-8 rounded-2xl shadow-xl w-[420px] border">
+        {/* LOGO / TITLE */}
+        <h2 className="text-2xl font-semibold mb-1 text-center">
+          <span className="text-blue-500">Blu</span>
+          <span className="text-yellow-500">Desk</span>
+        </h2>
 
-      <div className="bg-white p-8 rounded-2xl shadow-md w-[420px]">
-
-        <h2 className="text-2xl font-semibold mb-2">Login</h2>
-        <p className="text-gray-500 mb-6">
-          Enter your credentials to access your account
+        <p className="text-gray-500 text-center mb-6 text-sm">
+          Welcome back ! Please login to continue.
         </p>
 
+        {/* ERROR */}
         {error && (
-          <p className="text-red-500 text-sm mb-4">{error}</p>
+          <p className="text-red-500 text-sm mb-4 text-center">{error}</p>
         )}
 
         <form onSubmit={handleSubmit}>
-
+          {/* EMAIL */}
           <label className="block mb-1 text-sm font-medium">Email</label>
           <input
             type="email"
             placeholder="Enter your Email"
-            className="w-full p-3 mb-4 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            className="w-full p-3 mb-4 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
             onChange={(e) => setEmail(e.target.value)}
           />
 
+          {/* PASSWORD */}
           <label className="block mb-1 text-sm font-medium">Password</label>
           <input
             type="password"
             placeholder="Enter your password"
-            className="w-full p-3 mb-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            className="w-full p-3 mb-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
             onChange={(e) => setPassword(e.target.value)}
           />
 
+          {/* FORGOT */}
           <Link to="/forgot-password">
-            <p className="text-indigo-600 text-sm mb-6 cursor-pointer">
+            <p className="text-blue-600 text-sm mb-6 cursor-pointer hover:underline">
               Forgot Password?
             </p>
           </Link>
 
+          {/* BUTTON */}
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-indigo-600 hover:bg-indigo-700 text-white p-3 rounded-lg font-medium transition disabled:opacity-50"
+            className="w-full bg-gradient-to-r from-blue-500 to-yellow-400 hover:opacity-90 text-white p-3 rounded-lg font-medium transition disabled:opacity-50"
           >
             {loading ? "Logging in..." : "Login"}
           </button>
-
         </form>
       </div>
     </div>

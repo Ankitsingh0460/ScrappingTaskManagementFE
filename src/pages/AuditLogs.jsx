@@ -7,7 +7,7 @@ export default function AuditLogs() {
   const [logs, setLogs] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
 
-  const logsPerPage = 20;
+  const logsPerPage = 12;
   const pagesToShow = 4;
 
   useEffect(() => {

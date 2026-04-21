@@ -6,7 +6,9 @@ import Header from "../components/Header";
 export default function Users() {
   const [users, setUsers] = useState([]);
   const [error, setError] = useState("");
-
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [selectedUserId, setSelectedUserId] = useState(null);
+  const [showPassword, setShowPassword] = useState(false);
   const user = JSON.parse(localStorage.getItem("user"));
 
   const [form, setForm] = useState({
@@ -15,6 +17,10 @@ export default function Users() {
     password: "",
     role: "developer",
   });
+
+  // ✅ Pagination State
+  const [currentPage, setCurrentPage] = useState(1);
+  const usersPerPage = 10;
 
   useEffect(() => {
     fetchUsers();
@@ -37,58 +43,76 @@ export default function Users() {
     }
   };
 
-  const createUser = async () => {
-    if (!form.name || !form.email || !form.password) return;
+const createUser = async () => {
+  if (!form.name || !form.email || !form.password || !form.role) {
+    alert("All fields are mandatory");
+    return;
+  }
 
+  try {
+    await axios.post("/users", form);
+
+    setForm({
+      name: "",
+      email: "",
+      password: "",
+      role: "developer",
+    });
+
+    fetchUsers();
+  } catch (err) {
+    console.log(err);
+    alert(err.response?.data?.msg || "Error creating user");
+  }
+};
+
+  const deleteUser = async () => {
     try {
-      await axios.post("/users", form);
-
-      setForm({
-        name: "",
-        email: "",
-        password: "",
-        role: "developer",
-      });
-
+      await axios.delete(`/users/${selectedUserId}`);
       fetchUsers();
-    } catch (err) {
-      console.log(err);
-      alert(err.response?.data?.msg || "Error creating user");
-    }
-  };
-
-  const deleteUser = async (id) => {
-    const confirmDelete = confirm("Are you sure to delete this user?");
-    if (!confirmDelete) return;
-
-    try {
-      await axios.delete(`/users/${id}`);
-      fetchUsers();
+      setShowDeleteModal(false);
+      setSelectedUserId(null);
     } catch (err) {
       console.log(err);
       alert("Error deleting user");
     }
   };
 
+  // ✅ Pagination Logic
+  const indexOfLastUser = currentPage * usersPerPage;
+  const indexOfFirstUser = indexOfLastUser - usersPerPage;
+  const currentUsers = users.slice(indexOfFirstUser, indexOfLastUser);
+
+  const totalPages = Math.ceil(users.length / usersPerPage);
+
+  const visiblePages = 3; // how many page numbers you want to show
+
+  let startPage = currentPage;
+  let endPage = currentPage + visiblePages - 1;
+
+  // prevent overflow
+  if (endPage > totalPages) {
+    endPage = totalPages;
+    startPage = Math.max(1, endPage - visiblePages + 1);
+  }
+
+  const pageNumbers = [];
+  for (let i = startPage; i <= endPage; i++) {
+    pageNumbers.push(i);
+  }
+
   return (
     <div className="flex h-screen overflow-hidden">
-      {" "}
-      {/* ✅ UPDATED */}
-      {/* Sidebar */}
       <Sidebar />
-      {/* Main */}
+
       <div className="flex-1 bg-gray-100 flex flex-col">
-        {" "}
-        {/* ✅ UPDATED */}
         <Header />
-        {/* Scrollable Content */}
+
         <div className="p-6 overflow-y-auto flex-1">
-          {" "}
-          {/* ✅ UPDATED */}
-          {/* Title */}
-          <h2 className="text-xl font-semibold mb-4">Operation PICs</h2>
-          {/* ERROR */}
+          <h2 className="text-xl font-semibold mb-4">Create User</h2>
+
           {error && <p className="text-red-500 mb-4">{error}</p>}
+
           {/* Add User */}
           <div className="bg-white p-6 rounded-xl shadow mb-6 grid grid-cols-4 gap-4">
             <input
@@ -105,13 +129,23 @@ export default function Users() {
               className="p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
             />
 
-            <input
-              placeholder="Password"
-              type="password"
-              value={form.password}
-              onChange={(e) => setForm({ ...form, password: e.target.value })}
-              className="p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-            />
+            <div className="relative">
+              <input
+                placeholder="Password"
+                type={showPassword ? "text" : "password"}
+                value={form.password}
+                onChange={(e) => setForm({ ...form, password: e.target.value })}
+                className="p-3 border rounded-lg w-full focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              />
+
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-gray-500"
+              >
+                {showPassword ? "Hide" : "Show"}
+              </button>
+            </div>
 
             <select
               value={form.role}
@@ -131,6 +165,7 @@ export default function Users() {
               </button>
             </div>
           </div>
+
           {/* Users Table */}
           <div className="bg-white rounded-xl shadow p-6">
             <table className="w-full border-collapse">
@@ -144,7 +179,7 @@ export default function Users() {
               </thead>
 
               <tbody>
-                {users.map((u) => (
+                {currentUsers.map((u) => (
                   <tr
                     key={u._id}
                     className="border-t hover:bg-gray-50 transition"
@@ -154,23 +189,26 @@ export default function Users() {
 
                     <td className="p-3">
                       <span
-                        className={`px-3 py-1 rounded-full text-xs font-semibold
-                          ${
-                            u.role === "developer"
-                              ? "bg-blue-100 text-blue-600"
-                              : "bg-green-100 text-green-600"
-                          }
-                        `}
+                        className={`inline-flex items-center justify-center min-w-[100px] px-3 py-1 rounded-full text-xs font-semibold capitalize
+      ${
+        u.role === "developer"
+          ? "bg-blue-100 text-blue-600"
+          : "bg-green-100 text-green-600"
+      }
+    `}
                       >
-                        {u.role}
+                        {u.role.toUpperCase()}
                       </span>
                     </td>
 
                     <td className="p-3">
                       {user?.role === "admin" && (
                         <button
-                          onClick={() => deleteUser(u._id)}
-                          className="text-red-600 text-sm"
+                          onClick={() => {
+                            setSelectedUserId(u._id);
+                            setShowDeleteModal(true);
+                          }}
+                          className="px-3 py-1.5 rounded-md text-sm font-medium border border-red-200 text-red-600 hover:bg-red-600 hover:text-white transition duration-200 flex items-center gap-1"
                         >
                           Delete
                         </button>
@@ -180,9 +218,77 @@ export default function Users() {
                 ))}
               </tbody>
             </table>
+
+            {/* ✅ Pagination UI */}
+            <div className="flex justify-center items-center mt-6 gap-2 flex-wrap">
+              {/* Prev */}
+              <button
+                onClick={() => setCurrentPage((prev) => prev - 1)}
+                disabled={currentPage === 1}
+                className="px-3 py-1 rounded-md bg-gray-200 disabled:opacity-50"
+              >
+                Prev
+              </button>
+
+              {/* Dynamic Pages */}
+              {pageNumbers.map((page) => (
+                <button
+                  key={page}
+                  onClick={() => setCurrentPage(page)}
+                  className={`px-3 py-1 rounded-md text-sm ${
+                    currentPage === page
+                      ? "bg-indigo-600 text-white"
+                      : "bg-gray-200"
+                  }`}
+                >
+                  {page}
+                </button>
+              ))}
+
+              {/* Next */}
+              <button
+                onClick={() => setCurrentPage((prev) => prev + 1)}
+                disabled={currentPage === totalPages}
+                className="px-3 py-1 rounded-md bg-gray-200 disabled:opacity-50"
+              >
+                Next
+              </button>
+            </div>
           </div>
         </div>
       </div>
+      {showDeleteModal && (
+        <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl shadow-lg p-6 w-[350px]">
+            <h3 className="text-lg font-semibold mb-2 text-gray-800">
+              Delete User
+            </h3>
+
+            <p className="text-sm text-gray-600 mb-6">
+              Are you sure you want to delete this user? This action cannot be
+              undone.
+            </p>
+
+            <div className="flex justify-end gap-3">
+              {/* Cancel */}
+              <button
+                onClick={() => setShowDeleteModal(false)}
+                className="px-4 py-2 rounded-md bg-gray-200 hover:bg-gray-300"
+              >
+                Cancel
+              </button>
+
+              {/* Confirm Delete */}
+              <button
+                onClick={deleteUser}
+                className="px-4 py-2 rounded-md bg-red-600 text-white hover:bg-red-700"
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
