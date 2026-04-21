@@ -121,7 +121,7 @@ export default function Dashboard() {
                   <tr className="bg-gray-100 text-left text-sm text-gray-600">
                     <th className="p-3">Crawler</th>
                     <th className="p-3">Developer</th>
-                    <th className="p-3">Status</th>
+                    <th className="p-3 text-center w-[100px]">Status</th>
                     <th className="p-3">Due Date</th>
                   </tr>
                 </thead>
@@ -147,21 +147,23 @@ export default function Dashboard() {
 
                         <td className="p-3">{task.developer?.name || "-"}</td>
 
-                        <td className="p-3">
+                        <td className="p-3 text-center w-[100px]">
                           <span
-                            className={`px-3 py-1 rounded-full text-xs font-semibold
-                              ${
-                                task.status === "completed"
-                                  ? "bg-green-100 text-green-600"
-                                  : task.status === "in_progress"
-                                    ? "bg-yellow-100 text-yellow-600"
-                                    : task.status === "testing"
-                                      ? "bg-blue-100 text-blue-600"
-                                      : "bg-gray-100 text-gray-600"
-                              }
-                            `}
+                            className={`inline-flex items-center justify-center w-[100px] px-2 py-1 rounded-full text-xs font-semibold
+      ${
+        task.status === "completed"
+          ? "bg-green-100 text-green-600"
+          : task.status === "in_progress"
+            ? "bg-yellow-100 text-yellow-600"
+            : task.status === "testing"
+              ? "bg-blue-100 text-blue-600"
+              : task.status === "hold"
+                ? "bg-red-100 text-red-600"
+                : "bg-gray-100 text-gray-600"
+      }
+    `}
                           >
-                            {task.status}
+                            {task.status.replace("_", " ").toUpperCase()}
                           </span>
                         </td>
 
