@@ -7,6 +7,8 @@ import { useNavigate } from "react-router-dom";
 export default function Dashboard() {
   const [tasks, setTasks] = useState([]);
   const navigate = useNavigate();
+  const [currentPage, setCurrentPage] = useState(1);
+  const tasksPerPage = 15;
 
   useEffect(() => {
     fetchTasks();
@@ -61,8 +63,27 @@ export default function Dashboard() {
 
     return dateA - dateB;
   });
-
+  const pagesToShow = 4;
   const overdue = tasks.filter((t) => getDueStatus(t) === "overdue").length;
+
+  const totalPages = Math.ceil(sortedTasks.length / tasksPerPage);
+
+  const indexOfLastTask = currentPage * tasksPerPage;
+  const indexOfFirstTask = indexOfLastTask - tasksPerPage;
+
+  const currentTasks = sortedTasks.slice(indexOfFirstTask, indexOfLastTask);
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [tasks]);
+  const startPage =
+    Math.floor((currentPage - 1) / pagesToShow) * pagesToShow + 1;
+
+  const endPage = Math.min(startPage + pagesToShow - 1, totalPages);
+
+  const visiblePages = [];
+  for (let i = startPage; i <= endPage; i++) {
+    visiblePages.push(i);
+  }
 
   return (
     <div className="flex h-screen overflow-hidden">
@@ -127,7 +148,7 @@ export default function Dashboard() {
                 </thead>
 
                 <tbody>
-                  {sortedTasks.map((task) => {
+                  {currentTasks.map((task) => {
                     const status = getDueStatus(task);
 
                     return (
@@ -196,6 +217,60 @@ export default function Dashboard() {
                   })}
                 </tbody>
               </table>
+              <div className="flex justify-center items-center mt-6 gap-2">
+                {/* Prev */}
+                <button
+                  disabled={currentPage === 1}
+                  onClick={() => setCurrentPage((prev) => prev - 1)}
+                  className="px-3 py-1 rounded-md bg-gray-200 disabled:opacity-50"
+                >
+                  Prev
+                </button>
+
+                {/* Show "..." BEFORE if needed */}
+                {startPage > 1 && (
+                  <button
+                    onClick={() => setCurrentPage(startPage - 1)}
+                    className="px-2"
+                  >
+                    ...
+                  </button>
+                )}
+
+                {/* Page Numbers */}
+                {visiblePages.map((page) => (
+                  <button
+                    key={page}
+                    onClick={() => setCurrentPage(page)}
+                    className={`px-3 py-1 rounded-md ${
+                      currentPage === page
+                        ? "bg-indigo-500 text-white"
+                        : "bg-gray-100"
+                    }`}
+                  >
+                    {page}
+                  </button>
+                ))}
+
+                {/* Show "..." AFTER if more pages exist */}
+                {endPage < totalPages && (
+                  <button
+                    onClick={() => setCurrentPage(endPage + 1)}
+                    className="px-2"
+                  >
+                    ...
+                  </button>
+                )}
+
+                {/* Next */}
+                <button
+                  disabled={currentPage === totalPages}
+                  onClick={() => setCurrentPage((prev) => prev + 1)}
+                  className="px-3 py-1 rounded-md bg-gray-200 disabled:opacity-50"
+                >
+                  Next
+                </button>
+              </div>
             </div>
           </div>
         </div>
