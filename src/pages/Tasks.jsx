@@ -177,6 +177,11 @@ export default function Tasks() {
         stuckReason: data.reason,
       });
     }
+    if (type === "LEAD COMMENT") {
+      await axios.put(`/tasks/${taskId}/lead-comment`, {
+        comment: data.comment,
+      });
+    }
 
     if (type === "TESTER COMMENT") {
       await axios.put(`/tasks/${taskId}/tester-comment`, {
@@ -269,6 +274,15 @@ export default function Tasks() {
 
     return true;
   }).length;
+
+  const addLeadComment = (id, currentComment = "") => {
+    setFormModal({
+      open: true,
+      type: "LEAD COMMENT",
+      taskId: id,
+      currentValue: currentComment,
+    });
+  };
 
   // ✅ SAVE FILTERS TO LOCALSTORAGE
   useEffect(() => {
@@ -393,6 +407,7 @@ export default function Tasks() {
                     <th className="p-3 w-[120px] text-center">
                       Tester Comment
                     </th>
+                    <th className="p-3 w-[140px] text-center">Lead Comment</th>
                     <th className="p-3 w-[120px] text-center">Penalty</th>
                     <th className="p-3 w-[120px] text-center">Action</th>
                   </tr>
@@ -608,6 +623,30 @@ export default function Tasks() {
                             {lastLog?.testerComment && (
                               <div className="absolute left-0 bottom-full mb-2 hidden group-hover:block bg-gray-900 text-white text-xs p-2 rounded shadow-xl w-[180px] z-[9999] break-words">
                                 {lastLog.testerComment}
+                              </div>
+                            )}
+                          </td>
+                          <td className="p-3 max-w-[140px] relative group cursor-pointer text-xs text-indigo-600">
+                            {/* CLICKABLE FOR ADMIN */}
+                            <div
+                              className={`truncate ${
+                                user?.role === "admin"
+                                  ? "cursor-pointer hover:underline"
+                                  : ""
+                              }`}
+                              onClick={() => {
+                                if (user?.role === "admin") {
+                                  addLeadComment(t._id, t.leadComment || "");
+                                }
+                              }}
+                            >
+                              {t.leadComment || "-"}
+                            </div>
+
+                            {/* HOVER FULL TEXT */}
+                            {t.leadComment && (
+                              <div className="absolute left-0 bottom-full mb-2 hidden group-hover:block bg-gray-900 text-white text-xs p-2 rounded shadow-xl w-[200px] z-[9999] break-words">
+                                {t.leadComment}
                               </div>
                             )}
                           </td>
@@ -864,6 +903,14 @@ function FormBox({ type, onSubmit, onClose, currentValue }) {
         <textarea
           placeholder="Enter comment"
           className="border p-2 rounded"
+          onChange={(e) => setForm({ ...form, comment: e.target.value })}
+        />
+      )}
+      {type === "LEAD COMMENT" && (
+        <textarea
+          placeholder="Enter lead comment"
+          className="border p-2 rounded"
+          defaultValue={currentValue || ""}
           onChange={(e) => setForm({ ...form, comment: e.target.value })}
         />
       )}
