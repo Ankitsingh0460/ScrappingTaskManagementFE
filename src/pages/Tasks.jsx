@@ -261,7 +261,9 @@ export default function Tasks() {
     }
 
     if (statusFilter === "completed") return t.status === "completed";
-    if (statusFilter === "in-progress") return t.status !== "completed";
+    if (statusFilter === "in-progress") {
+      return t.status !== "completed" && t.status !== "hold";
+    }
     if (statusFilter === "overdue") return getDueStatus(t) === "overdue";
     if (statusFilter === "today") return getDueStatus(t) === "today";
     if (statusFilter === "tomorrow") return getDueStatus(t) === "tomorrow";
@@ -453,7 +455,7 @@ export default function Tasks() {
                       }
 
                       if (statusFilter === "in-progress") {
-                        return t.status !== "completed";
+                        return t.status !== "completed" && t.status !== "hold";
                       }
 
                       if (statusFilter === "overdue") {
