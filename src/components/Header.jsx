@@ -81,7 +81,7 @@ export default function Header() {
           <div className="w-8 h-8 rounded-full bg-indigo-500 text-white flex items-center justify-center text-sm font-semibold">
             {user?.name?.charAt(0)?.toUpperCase() || "U"}
           </div>
-
+          {/* new */}
           <div className="flex flex-col leading-tight">
             <span className="text-sm font-medium text-gray-700">
               {user?.name}
