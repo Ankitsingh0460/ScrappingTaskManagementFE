@@ -7,6 +7,7 @@ import {
   AudioLines,
   ClipboardList,
   RotateCcwKey,
+  BookUser,
 } from "lucide-react";
 
 export default function Sidebar() {
@@ -32,6 +33,7 @@ export default function Sidebar() {
       path: "/change-password",
       icon: <RotateCcwKey size={18} />,
     },
+    { name: "Team Member", path: "/team", icon: <BookUser size={18} /> },
   ];
 
   return (
