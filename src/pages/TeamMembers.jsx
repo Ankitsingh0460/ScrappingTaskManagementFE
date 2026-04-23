@@ -10,7 +10,7 @@ export default function TeamMembers() {
   const [showModal, setShowModal] = useState(false);
   const [selectedTeam, setSelectedTeam] = useState("all");
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 5;
+  const itemsPerPage = 10;
   // ✅ NEW (developers list)
   const [developers, setDevelopers] = useState([]);
 
@@ -72,12 +72,22 @@ export default function TeamMembers() {
   };
 
   // ✅ FILTER
-  const filteredMembers = members.filter((m) => {
-    if (selectedTeam !== "all" && m.team !== selectedTeam) {
-      return false;
-    }
-    return true;
-  });
+  const filteredMembers = members
+    .filter((m) => {
+      if (selectedTeam !== "all" && m.team !== selectedTeam) {
+        return false;
+      }
+      return true;
+    })
+    .sort((a, b) => {
+      const aId = String(a.userId?._id || a.userId);
+      const bId = String(b.userId?._id || b.userId);
+      const currentId = String(user?._id || user?.id);
+
+      if (aId === currentId) return -1; // move to top
+      if (bId === currentId) return 1;
+      return 0;
+    });
 
   // ✅ pagination logic
   const totalResults = filteredMembers.length;
@@ -158,7 +168,12 @@ export default function TeamMembers() {
                     String(user?._id || user?.id);
 
                   return (
-                    <tr key={m._id} className="border-t text-center">
+                    <tr
+                      key={m._id}
+                      className={`border-t text-center ${
+                        isOwn ? "bg-indigo-50 font-medium" : ""
+                      }`}
+                    >
                       <td className="p-3">{m.name}</td>
                       <td className="p-3">{m.team}</td>
                       <td className="p-3">{m.position}</td>
