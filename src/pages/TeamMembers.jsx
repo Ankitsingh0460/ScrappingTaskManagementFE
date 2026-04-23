@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import axios from "../api/axios";
 import { saveAs } from "file-saver";
 import * as XLSX from "xlsx-js-style";
+
 export default function TeamMembers() {
   const [members, setMembers] = useState([]);
   const [form, setForm] = useState({});
@@ -11,6 +12,7 @@ export default function TeamMembers() {
   const [showModal, setShowModal] = useState(false);
   const [selectedTeam, setSelectedTeam] = useState("all");
   const [currentPage, setCurrentPage] = useState(1);
+  const [lastUpdated, setLastUpdated] = useState(null);
   const itemsPerPage = 10;
   // ✅ NEW (developers list)
   const [developers, setDevelopers] = useState([]);
@@ -19,7 +21,8 @@ export default function TeamMembers() {
 
   useEffect(() => {
     fetchMembers();
-    fetchDevelopers(); // ✅ NEW
+    fetchDevelopers();
+    fetchLastUpdated(); // ✅ NEW
   }, []);
 
   const fetchMembers = async () => {
@@ -36,6 +39,10 @@ export default function TeamMembers() {
     );
 
     setDevelopers(filtered);
+  };
+  const fetchLastUpdated = async () => {
+    const res = await axios.get("/team-last-updated");
+    setLastUpdated(res.data);
   };
 
   const handleSubmit = async () => {
@@ -96,37 +103,68 @@ export default function TeamMembers() {
     Object.keys(grouped).forEach((team) => {
       const data = grouped[team];
 
-      const worksheet = XLSX.utils.json_to_sheet(data);
+      const worksheet = XLSX.utils.json_to_sheet(data, { origin: "A3" });
 
-      // ✅ Auto column width
-      const colWidths = Object.keys(data[0] || {}).map(() => ({ wch: 20 }));
-      worksheet["!cols"] = colWidths;
+      // ✅ Last Updated Row
+      XLSX.utils.sheet_add_aoa(
+        worksheet,
+        [
+          [
+            `Last Updated: ${
+              lastUpdated ? new Date(lastUpdated).toLocaleString() : "N/A"
+            }`,
+          ],
+        ],
+        { origin: "A1" },
+      );
 
-      // ✅ Highlight header row
-      const range = XLSX.utils.decode_range(worksheet["!ref"]);
+      // ✅ Empty Row
+      XLSX.utils.sheet_add_aoa(worksheet, [[]], { origin: "A2" });
 
-      for (let col = range.s.c; col <= range.e.c; col++) {
-        const cellAddress = XLSX.utils.encode_cell({ r: 0, c: col });
+      // ✅ Highlight Header Row
+      const headers = Object.keys(data[0] || {});
+      headers.forEach((_, colIndex) => {
+        const cellAddress = XLSX.utils.encode_cell({
+          r: 2, // row 3 (0-based index)
+          c: colIndex,
+        });
 
-        if (!worksheet[cellAddress]) continue;
+        if (worksheet[cellAddress]) {
+          worksheet[cellAddress].s = {
+            font: {
+              bold: true,
+              color: { rgb: "FFFFFF" },
+            },
+            fill: {
+              fgColor: { rgb: "4F46E5" }, // Indigo
+            },
+            alignment: {
+              horizontal: "center",
+              vertical: "center",
+            },
+          };
+        }
+      });
 
-        worksheet[cellAddress].s = {
-          font: { bold: true, color: { rgb: "FFFFFF" } },
-          fill: { fgColor: { rgb: "4F46E5" } }, // Indigo color
-          alignment: { horizontal: "center" },
-        };
-      }
+      // ✅ Column Width
+      worksheet["!cols"] = headers.map(() => ({ wch: 20 }));
+
+      // ✅ Merge Last Updated Row
+      worksheet["!merges"] = [
+        {
+          s: { r: 0, c: 0 },
+          e: { r: 0, c: headers.length - 1 },
+        },
+      ];
 
       XLSX.utils.book_append_sheet(workbook, worksheet, team);
     });
 
-    // ✅ File name with date
     const today = new Date().toISOString().split("T")[0];
 
     const excelBuffer = XLSX.write(workbook, {
       bookType: "xlsx",
       type: "array",
-      cellStyles: true, // IMPORTANT for styling
     });
 
     const file = new Blob([excelBuffer], {
@@ -211,16 +249,26 @@ export default function TeamMembers() {
           </div>
 
           {/* FILTER */}
-          <div className="flex gap-2 mb-4">
-            <select
-              value={selectedTeam}
-              onChange={(e) => setSelectedTeam(e.target.value)}
-              className="border px-3 py-2 rounded bg-white"
-            >
-              <option value="all">All Teams</option>
-              <option value="IDE">IDE</option>
-              <option value="SPRINKLER">SPRINKLER</option>
-            </select>
+          <div className="flex justify-between items-center mb-4">
+            <div className="flex gap-2">
+              <select
+                value={selectedTeam}
+                onChange={(e) => setSelectedTeam(e.target.value)}
+                className="border px-3 py-2 rounded bg-white"
+              >
+                <option value="all">All Teams</option>
+                <option value="IDE">IDE</option>
+                <option value="SPRINKLER">SPRINKLER</option>
+              </select>
+            </div>
+
+            {/* ✅ LAST UPDATED */}
+            <div className="text-sm text-gray-600">
+              Last Updated:{" "}
+              {lastUpdated
+                ? new Date(lastUpdated).toLocaleString()
+                : "No updates yet"}
+            </div>
           </div>
 
           {/* TABLE */}
