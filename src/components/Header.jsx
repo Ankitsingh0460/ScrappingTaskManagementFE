@@ -4,26 +4,38 @@ import { AuthContext } from "../context/AuthContext";
 export default function Header() {
   const { user, logout } = useContext(AuthContext);
 
-  const [showMessage, setShowMessage] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
+  const [showMessage, setShowMessage] = useState(false);
+  const [message, setMessage] = useState("");
+
+  const messages = [
+    "Let’s get things done 🚀",
+    "Stay focused and keep building 💪",
+    "Small steps, big results 🔥",
+    "Make today productive ⚡",
+    "You’re doing great, keep going 🙌",
+    "Push your limits today 🚀",
+  ];
 
   const dropdownRef = useRef();
 
   useEffect(() => {
-    let interval;
+    let index = 0;
 
     const startTimer = setTimeout(() => {
       setShowMessage(true);
+      setMessage(messages[index]);
 
-      interval = setInterval(() => {
-        setShowMessage((prev) => !prev);
+      const interval = setInterval(() => {
+        index = (index + 1) % messages.length; // loop
+
+        setMessage(messages[index]);
       }, 3000);
-    }, 10000);
 
-    return () => {
-      clearTimeout(startTimer);
-      clearInterval(interval);
-    };
+      return () => clearInterval(interval);
+    }, 1000); // optional delay
+
+    return () => clearTimeout(startTimer);
   }, []);
 
   // ✅ Close dropdown on outside click
@@ -45,17 +57,17 @@ export default function Header() {
         <h2 className="text-lg font-semibold text-gray-800">Dashboard</h2>
 
         <div className="flex items-center gap-2 h-[18px] overflow-hidden">
-          <span className="text-xs text-gray-500">Welcome back 👋</span>
+          <span className="text-sm text-gray-500 whitespace-nowrap">
+            Welcome back 👋
+          </span>
 
-          <span
-            className={`text-xs text-indigo-500 transition-all duration-500 ${
-              showMessage
-                ? "opacity-100 translate-x-0"
-                : "opacity-0 translate-x-3"
+          <div
+            className={`transition-opacity duration-500 font-bold text-sm text-transparent bg-clip-text bg-gradient-to-r from-red-500 via-yellow-500 to-blue-500 ${
+              showMessage ? "opacity-100" : "opacity-0"
             }`}
           >
-            • Let’s get things done 🚀
-          </span>
+            {message}
+          </div>
         </div>
       </div>
 
