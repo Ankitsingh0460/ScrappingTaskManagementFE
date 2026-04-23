@@ -9,7 +9,7 @@ export default function Login() {
 
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-
+  const [showPassword, setShowPassword] = useState(false);
   const { login } = useContext(AuthContext);
   const navigate = useNavigate();
 
@@ -20,19 +20,14 @@ export default function Login() {
       setLoading(true);
       setError("");
 
-      const res = await axios.post("/auth/login", {
-        email,
-        password,
-      });
+      const data = await login({ email, password }); // ✅ single call
 
-      login(res.data);
-
-      if (res.data.forcePasswordChange) {
+      if (data.forcePasswordChange) {
         navigate("/change-password");
         return;
       }
 
-      if (res.data.user.role === "admin") {
+      if (data.user.role === "admin") {
         navigate("/dashboard");
       } else {
         navigate("/my-tasks");
@@ -75,12 +70,24 @@ export default function Login() {
 
           {/* PASSWORD */}
           <label className="block mb-1 text-sm font-medium">Password</label>
-          <input
-            type="password"
-            placeholder="Enter your password"
-            className="w-full p-3 mb-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
-            onChange={(e) => setPassword(e.target.value)}
-          />
+
+          <div className="relative">
+            <input
+              type={showPassword ? "text" : "password"} // 👈 toggle
+              placeholder="Enter your password"
+              className="w-full p-3 mb-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 pr-10"
+              onChange={(e) => setPassword(e.target.value)}
+            />
+
+            {/* 👁️ Eye Button */}
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              className="absolute right-3 top-3 text-gray-500"
+            >
+              {showPassword ? "🙈" : "👁️"}
+            </button>
+          </div>
 
           {/* FORGOT */}
           <Link to="/forgot-password">
