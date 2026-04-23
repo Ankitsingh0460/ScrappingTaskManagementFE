@@ -1,0 +1,351 @@
+import Sidebar from "../components/Sidebar";
+import Header from "../components/Header";
+import { useEffect, useState } from "react";
+import axios from "../api/axios";
+
+export default function TeamMembers() {
+  const [members, setMembers] = useState([]);
+  const [form, setForm] = useState({});
+  const [editData, setEditData] = useState(null);
+  const [showModal, setShowModal] = useState(false);
+  const [selectedTeam, setSelectedTeam] = useState("all");
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 5;
+  // ✅ NEW (developers list)
+  const [developers, setDevelopers] = useState([]);
+
+  const user = JSON.parse(localStorage.getItem("user"));
+
+  useEffect(() => {
+    fetchMembers();
+    fetchDevelopers(); // ✅ NEW
+  }, []);
+
+  const fetchMembers = async () => {
+    const res = await axios.get("/team");
+    setMembers(res.data);
+  };
+
+  // ✅ NEW (fetch developers)
+  const fetchDevelopers = async () => {
+    const res = await axios.get("/users"); // ✅ get all users
+
+    const filtered = res.data.filter(
+      (u) => u.role === "developer" || u.role === "admin",
+    );
+
+    setDevelopers(filtered);
+  };
+
+  const handleSubmit = async () => {
+    const payload = {
+      ...form,
+      skills: form.skills ? form.skills.split(",").map((s) => s.trim()) : [],
+    };
+
+    if (editData) {
+      await axios.put(`/team/${editData._id}`, payload);
+    } else {
+      await axios.post("/team", payload); // ✅ userId will go from form
+    }
+
+    setShowModal(false);
+    setForm({});
+    setEditData(null);
+    fetchMembers();
+  };
+
+  const deleteMember = async (id) => {
+    if (!confirm("Delete member?")) return;
+    await axios.delete(`/team/${id}`);
+    fetchMembers();
+  };
+
+  const editMember = (m) => {
+    setEditData(m);
+    setForm({
+      ...m,
+      userId: m.userId?._id || m.userId, // ✅ FIX
+      skills: m.skills?.join(", ") || "",
+    });
+    setShowModal(true);
+  };
+
+  // ✅ FILTER
+  const filteredMembers = members.filter((m) => {
+    if (selectedTeam !== "all" && m.team !== selectedTeam) {
+      return false;
+    }
+    return true;
+  });
+
+  // ✅ pagination logic
+  const totalResults = filteredMembers.length;
+
+  const indexOfLast = currentPage * itemsPerPage;
+  const indexOfFirst = indexOfLast - itemsPerPage;
+
+  const currentMembers = filteredMembers.slice(indexOfFirst, indexOfLast);
+
+  // total pages
+  const totalPages = Math.ceil(totalResults / itemsPerPage);
+
+  return (
+    <div className="flex">
+      {/* SIDEBAR */}
+      <div className="w-64">
+        <Sidebar />
+      </div>
+
+      {/* MAIN */}
+      <div className="flex-1 bg-gray-100 h-screen flex flex-col">
+        <Header />
+
+        <div className="p-4 overflow-y-auto">
+          {/* HEADER */}
+          <div className="flex justify-between items-center mb-4">
+            <h1 className="text-xl font-bold">Team Members</h1>
+            <span className="text-sm text-gray-600">
+              Showing {currentMembers.length} of {totalResults} results
+            </span>
+
+            {user?.role === "admin" && (
+              <button
+                onClick={() => {
+                  setForm({});
+                  setEditData(null);
+                  setShowModal(true);
+                }}
+                className="bg-indigo-600 text-white px-4 py-2 rounded-lg"
+              >
+                + Add Member
+              </button>
+            )}
+          </div>
+
+          {/* FILTER */}
+          <div className="flex gap-2 mb-4">
+            <select
+              value={selectedTeam}
+              onChange={(e) => setSelectedTeam(e.target.value)}
+              className="border px-3 py-2 rounded bg-white"
+            >
+              <option value="all">All Teams</option>
+              <option value="IDE">IDE</option>
+              <option value="SPRINKLER">SPRINKLER</option>
+            </select>
+          </div>
+
+          {/* TABLE */}
+          <div className="bg-white rounded shadow overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead className="bg-gray-100">
+                <tr>
+                  <th className="p-3">Name</th>
+                  <th className="p-3">Team</th>
+                  <th className="p-3">Position</th>
+                  <th className="p-3">Joining</th>
+                  <th className="p-3">Skills</th>
+                  <th className="p-3">Action</th>
+                </tr>
+              </thead>
+
+              <tbody>
+                {currentMembers.map((m) => {
+                  // ✅ FIXED MATCH (IMPORTANT)
+                  const isOwn =
+                    String(m.userId?._id || m.userId) ===
+                    String(user?._id || user?.id);
+
+                  return (
+                    <tr key={m._id} className="border-t text-center">
+                      <td className="p-3">{m.name}</td>
+                      <td className="p-3">{m.team}</td>
+                      <td className="p-3">{m.position}</td>
+                      <td className="p-3">
+                        {m.joiningDate
+                          ? new Date(m.joiningDate).toLocaleDateString()
+                          : "-"}
+                      </td>
+                      <td className="p-3 max-w-[200px] break-words whitespace-normal">
+                        {m.skills?.join(", ")}
+                      </td>
+
+                      <td className="p-3">
+                        {/* 👑 ADMIN */}
+                        {user?.role === "admin" && (
+                          <>
+                            <button
+                              onClick={() => editMember(m)}
+                              className="mr-2 text-blue-600"
+                            >
+                              ✏️
+                            </button>
+                            <button
+                              onClick={() => deleteMember(m._id)}
+                              className="text-red-600"
+                            >
+                              🗑
+                            </button>
+                          </>
+                        )}
+
+                        {/* 👨‍💻 DEV → only own */}
+                        {user?.role === "developer" && isOwn && (
+                          <button
+                            onClick={() => editMember(m)}
+                            className="text-indigo-600"
+                          >
+                            Edit Skills
+                          </button>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+            <div className="flex justify-center items-center gap-2 mt-4 mb-4">
+              <button
+                disabled={currentPage === 1}
+                onClick={() => setCurrentPage((prev) => prev - 1)}
+                className="px-3 py-1 border rounded disabled:opacity-50"
+              >
+                Prev
+              </button>
+
+              <span className="text-sm">
+                Page {currentPage} of {totalPages}
+              </span>
+
+              <button
+                disabled={currentPage === totalPages}
+                onClick={() => setCurrentPage((prev) => prev + 1)}
+                className="px-3 py-1 border rounded disabled:opacity-50"
+              >
+                Next
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* ✅ MODAL */}
+      {showModal && (
+        <div className="fixed inset-0 bg-black/40 flex items-start justify-center pt-20">
+          <div className="bg-white rounded-xl p-5 w-[500px] shadow-xl">
+            <h2 className="text-lg font-semibold mb-4">
+              {editData ? "Edit Data" : "Add Member"}
+            </h2>
+
+            <div className="grid grid-cols-2 gap-3">
+              {/* NAME */}
+              {user?.role === "admin" && (
+                <select
+                  value={form.userId || ""}
+                  onChange={(e) => {
+                    const selectedUser = developers.find(
+                      (d) => d._id === e.target.value,
+                    );
+
+                    setForm({
+                      ...form,
+                      userId: selectedUser._id, // ✅ important
+                      name: selectedUser.name, // ✅ auto-fill name
+                    });
+                  }}
+                  className="border p-2 rounded"
+                >
+                  <option value="">Select Member</option>
+
+                  {developers.map((dev) => (
+                    <option key={dev._id} value={dev._id}>
+                      {dev.name}
+                    </option>
+                  ))}
+                </select>
+              )}
+
+              {/* TEAM */}
+              {user?.role === "admin" && (
+                <>
+                  <select
+                    value={form.team || ""}
+                    onChange={(e) =>
+                      setForm({
+                        ...form,
+                        team: e.target.value,
+                      })
+                    }
+                    className="border p-2 rounded"
+                  >
+                    <option value="">Select Team</option>
+                    <option value="IDE">IDE</option>
+                    <option value="SPRINKLER">SPRINKLER</option>
+                  </select>
+                </>
+              )}
+
+              {/* POSITION */}
+              {user?.role === "admin" && (
+                <select
+                  value={form.position || ""}
+                  onChange={(e) =>
+                    setForm({ ...form, position: e.target.value })
+                  }
+                  className="border p-2 rounded"
+                >
+                  <option value="">Position</option>
+                  <option value="Full Time">Full Time</option>
+                  <option value="Intern">Intern</option>
+                </select>
+              )}
+
+              {/* DATE */}
+              {user?.role === "admin" && (
+                <input
+                  type="date"
+                  value={form.joiningDate || ""}
+                  onChange={(e) =>
+                    setForm({
+                      ...form,
+                      joiningDate: e.target.value,
+                    })
+                  }
+                  className="border p-2 rounded"
+                />
+              )}
+
+              {/* ✅ NEW: Developer select (IMPORTANT FIX) */}
+
+              {/* SKILLS */}
+              <input
+                placeholder="Skills"
+                value={form.skills || ""}
+                onChange={(e) => setForm({ ...form, skills: e.target.value })}
+                className="border p-2 rounded col-span-2"
+              />
+            </div>
+
+            {/* ACTION */}
+            <div className="flex justify-end gap-2 mt-4">
+              <button
+                onClick={() => setShowModal(false)}
+                className="border px-4 py-1 rounded"
+              >
+                Cancel
+              </button>
+
+              <button
+                onClick={handleSubmit}
+                className="bg-indigo-600 text-white px-4 py-1 rounded"
+              >
+                {editData ? "Update" : "Add"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}

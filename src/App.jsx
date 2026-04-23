@@ -10,21 +10,58 @@ import ForgotPassword from "./pages/ForgetPaassword";
 import TaskDetails from "./pages/TaskDetails";
 import ChangePassword from "./pages/ChangePassword";
 import AuditLogs from "./pages/AuditLogs";
+import TeamMembers from "./pages/TeamMembers";
 
 function App() {
   return (
     <Routes>
       <Route path="/" element={<Login />} />
       <Route path="/login" element={<Login />} />
-      <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-      <Route path="/projects" element={<ProtectedRoute><Projects /></ProtectedRoute>} />
-      <Route path="/tasks" element={<ProtectedRoute><Tasks /></ProtectedRoute>} />
-      <Route path="/my-tasks" element={<ProtectedRoute><MyTasks /></ProtectedRoute>} />
-      <Route path="/users" element={<ProtectedRoute><Users /></ProtectedRoute>} />
-      <Route path="/forgot-password" element={<ForgotPassword/>} />
+      <Route
+        path="/dashboard"
+        element={
+          <ProtectedRoute>
+            <Dashboard />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/projects"
+        element={
+          <ProtectedRoute>
+            <Projects />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/tasks"
+        element={
+          <ProtectedRoute>
+            <Tasks />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/my-tasks"
+        element={
+          <ProtectedRoute>
+            <MyTasks />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/users"
+        element={
+          <ProtectedRoute>
+            <Users />
+          </ProtectedRoute>
+        }
+      />
+      <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="/tasks/:id" element={<TaskDetails />} />
-       <Route path="/change-password" element={<ChangePassword/>} />
-       <Route path="/audit" element={<AuditLogs/>} />
+      <Route path="/change-password" element={<ChangePassword />} />
+      <Route path="/audit" element={<AuditLogs />} />
+      <Route path="/team" element={<TeamMembers />} />
     </Routes>
   );
 }
