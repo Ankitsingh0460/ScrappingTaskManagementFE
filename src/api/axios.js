@@ -1,17 +1,9 @@
 import axios from "axios";
 
 const instance = axios.create({
-  baseURL: "https://scrappingtaskmanagementbe.onrender.com/api"
-});
-
-instance.interceptors.request.use((config) => {
-  const token = localStorage.getItem("token");
-
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`; // 🔥 MUST
-  }
-
-  return config;
+  baseURL: "https://scrappingtaskmanagementbe.onrender.com/api",
+  // baseURL: "http://localhost:5000/api",
+  withCredentials: true,
 });
 
 export default instance;

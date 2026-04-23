@@ -1,14 +1,22 @@
 import Sidebar from "../components/Sidebar";
 import Header from "../components/Header";
-import { useEffect, useState } from "react";
+import { useContext, useEffect, useState } from "react";
 import axios from "../api/axios";
 import { useNavigate } from "react-router-dom";
+import { AuthContext } from "../context/AuthContext";
 
 export default function Dashboard() {
   const [tasks, setTasks] = useState([]);
   const navigate = useNavigate();
   const [currentPage, setCurrentPage] = useState(1);
   const tasksPerPage = 12;
+  const { user, loading } = useContext(AuthContext);
+
+  useEffect(() => {
+    if (!loading && user) {
+      fetchTasks();
+    }
+  }, [loading, user]);
 
   useEffect(() => {
     fetchTasks();

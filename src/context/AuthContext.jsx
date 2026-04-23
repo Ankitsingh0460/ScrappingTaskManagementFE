@@ -1,55 +1,59 @@
 import { createContext, useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import axios from "../api/axios";
 
 export const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
-  const navigate = useNavigate();
-
   const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
 
-  // ✅ Load user from localStorage on app start
+  // ✅ Load user safely from localStorage
   useEffect(() => {
-    const storedUser = JSON.parse(localStorage.getItem("user"));
-    if (storedUser) {
-      setUser(storedUser);
+    try {
+      const storedUser = localStorage.getItem("user");
+
+      if (storedUser) {
+        setUser(JSON.parse(storedUser));
+      }
+    } catch (err) {
+      console.error("Invalid user in localStorage");
+      localStorage.removeItem("user");
+    } finally {
+      setLoading(false);
     }
   }, []);
 
-  // ✅ LOGIN FUNCTION
-  const login = (data) => {
-    // Save token
-    localStorage.setItem("token", data.token);
+  // ✅ LOGIN
+  const login = async (credentials) => {
+    try {
+      const res = await axios.post("/auth/login", credentials);
 
-    // Remove sensitive data
-    const safeUser = {
-      _id: data.user._id,
-      name: data.user.name,
-      email: data.user.email,
-      role: data.user.role,
-    };
+      const safeUser = res.data.user;
 
-    // Save user
-    localStorage.setItem("user", JSON.stringify(safeUser));
-    setUser(safeUser);
+      localStorage.setItem("user", JSON.stringify(safeUser));
+      setUser(safeUser);
 
-    // Redirect after login
-    navigate("/"); // or "/dashboard"
+      return res.data;
+    } catch (error) {
+      console.error("Login error:", error);
+      throw error;
+    }
   };
 
-  // ✅ LOGOUT FUNCTION
-  const logout = () => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("user");
+  // ✅ LOGOUT
+  const logout = async () => {
+    try {
+      await axios.post("/auth/logout");
+    } catch (error) {
+      console.error("Logout error:", error);
+    }
 
+    localStorage.clear();
     setUser(null);
-
-    // Force redirect
-    navigate("/login");
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, logout }}>
+    <AuthContext.Provider value={{ user, login, logout, loading }}>
       {children}
     </AuthContext.Provider>
   );
