@@ -259,6 +259,14 @@ export default function Tasks() {
         return false;
       }
     }
+    if (statusFilter === "stuck") {
+      return (
+        t.stuckReason &&
+        t.stuckReason.trim() !== "" &&
+        t.status !== "completed" &&
+        t.status !== "hold"
+      );
+    }
 
     if (statusFilter === "completed") return t.status === "completed";
     if (statusFilter === "in-progress") {
@@ -346,6 +354,9 @@ export default function Tasks() {
                 <option value="today">Today Due</option>
                 <option value="tomorrow">Tomorrow Due</option>
                 <option value="week">This Week Due</option>
+                {user?.role === "admin" && (
+                  <option value="stuck">Stuck By Dev</option>
+                )}
                 <option value="penalty">Penalty Crawlers</option> {/* ✅ NEW */}
               </select>
               {user?.role === "admin" && (
@@ -447,6 +458,14 @@ export default function Tasks() {
                         ) {
                           return false;
                         }
+                      }
+                      if (statusFilter === "stuck") {
+                        return (
+                          t.stuckReason &&
+                          t.stuckReason.trim() !== "" &&
+                          t.status !== "completed" &&
+                          t.status !== "hold"
+                        );
                       }
 
                       // ✅ STATUS FILTER
