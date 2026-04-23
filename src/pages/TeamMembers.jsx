@@ -2,7 +2,8 @@ import Sidebar from "../components/Sidebar";
 import Header from "../components/Header";
 import { useEffect, useState } from "react";
 import axios from "../api/axios";
-
+import { saveAs } from "file-saver";
+import * as XLSX from "xlsx-js-style";
 export default function TeamMembers() {
   const [members, setMembers] = useState([]);
   const [form, setForm] = useState({});
@@ -71,6 +72,70 @@ export default function TeamMembers() {
     setShowModal(true);
   };
 
+  const exportToExcel = () => {
+    const grouped = {};
+
+    members.forEach((m) => {
+      if (!grouped[m.team]) {
+        grouped[m.team] = [];
+      }
+
+      grouped[m.team].push({
+        Name: m.name,
+        Team: m.team,
+        Position: m.position,
+        JoiningDate: m.joiningDate
+          ? new Date(m.joiningDate).toLocaleDateString()
+          : "-",
+        // Skills: m.skills?.join(", "),
+      });
+    });
+
+    const workbook = XLSX.utils.book_new();
+
+    Object.keys(grouped).forEach((team) => {
+      const data = grouped[team];
+
+      const worksheet = XLSX.utils.json_to_sheet(data);
+
+      // ✅ Auto column width
+      const colWidths = Object.keys(data[0] || {}).map(() => ({ wch: 20 }));
+      worksheet["!cols"] = colWidths;
+
+      // ✅ Highlight header row
+      const range = XLSX.utils.decode_range(worksheet["!ref"]);
+
+      for (let col = range.s.c; col <= range.e.c; col++) {
+        const cellAddress = XLSX.utils.encode_cell({ r: 0, c: col });
+
+        if (!worksheet[cellAddress]) continue;
+
+        worksheet[cellAddress].s = {
+          font: { bold: true, color: { rgb: "FFFFFF" } },
+          fill: { fgColor: { rgb: "4F46E5" } }, // Indigo color
+          alignment: { horizontal: "center" },
+        };
+      }
+
+      XLSX.utils.book_append_sheet(workbook, worksheet, team);
+    });
+
+    // ✅ File name with date
+    const today = new Date().toISOString().split("T")[0];
+
+    const excelBuffer = XLSX.write(workbook, {
+      bookType: "xlsx",
+      type: "array",
+      cellStyles: true, // IMPORTANT for styling
+    });
+
+    const file = new Blob([excelBuffer], {
+      type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    });
+
+    saveAs(file, `BrightData_Team_${today}.xlsx`);
+  };
+
   // ✅ FILTER
   const filteredMembers = members
     .filter((m) => {
@@ -115,22 +180,34 @@ export default function TeamMembers() {
           {/* HEADER */}
           <div className="flex justify-between items-center mb-4">
             <h1 className="text-xl font-bold">Team Members</h1>
-            <span className="text-sm text-gray-600">
-              Showing {currentMembers.length} of {totalResults} results
-            </span>
 
-            {user?.role === "admin" && (
-              <button
-                onClick={() => {
-                  setForm({});
-                  setEditData(null);
-                  setShowModal(true);
-                }}
-                className="bg-indigo-600 text-white px-4 py-2 rounded-lg"
-              >
-                + Add Member
-              </button>
-            )}
+            <div className="flex items-center gap-3">
+              <span className="text-sm text-gray-600">
+                Showing {currentMembers.length} of {totalResults} results
+              </span>
+
+              {/* ✅ NEW EXPORT BUTTON */}
+              {user?.role === "admin" && (
+                <button
+                  onClick={exportToExcel}
+                  className="bg-green-600 text-white px-3 py-2 rounded-lg text-sm hover:bg-green-700"
+                >
+                  ⬇ Export Excel
+                </button>
+              )}
+              {user?.role === "admin" && (
+                <button
+                  onClick={() => {
+                    setForm({});
+                    setEditData(null);
+                    setShowModal(true);
+                  }}
+                  className="bg-indigo-600 text-white px-4 py-2 rounded-lg"
+                >
+                  + Add Member
+                </button>
+              )}
+            </div>
           </div>
 
           {/* FILTER */}
