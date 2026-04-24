@@ -15,6 +15,7 @@ export default function CreateTask({ onClose, refresh, editTaskData }) {
   const [users, setUsers] = useState([]);
   const [projects, setProjects] = useState([]);
   const [error, setError] = useState("");
+  const [createing, setCreating] = useState(false);
 
   useEffect(() => {
     fetchData();
@@ -65,7 +66,7 @@ export default function CreateTask({ onClose, refresh, editTaskData }) {
         !projectId ||
         !developer ||
         !tester ||
-        !assignDate ||  
+        !assignDate ||
         !expectedCompletionDate
       ) {
         setError("All fields marked with * are required");
@@ -74,12 +75,13 @@ export default function CreateTask({ onClose, refresh, editTaskData }) {
     }
 
     try {
+      setCreating(true);
       if (editTaskData) {
         await axios.put(`/tasks/${editTaskData._id}`, form);
       } else {
         await axios.post("/tasks", form);
       }
-
+      setCreating(false);
       refresh();
       onClose();
       toast.success("Task updated successfully");
@@ -244,7 +246,8 @@ export default function CreateTask({ onClose, refresh, editTaskData }) {
               type="submit"
               className="px-4 py-2 rounded-lg text-white bg-gradient-to-r from-blue-500 to-yellow-400 hover:opacity-90 transition"
             >
-              {editTaskData ? "Update" : "Create"}
+              {createing ? "Processing..." : editTaskData ? "Update" : "Create"}
+              {/* {editTaskData ? "Update" : "Create"} */}
             </button>
           </div>
         </form>

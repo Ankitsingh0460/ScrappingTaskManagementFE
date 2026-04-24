@@ -14,6 +14,8 @@ export default function Tasks() {
   const [search, setSearch] = useState(localStorage.getItem("search") || "");
   const [editTaskData, setEditTaskData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [showConfirm, setShowConfirm] = useState(false);
+  const [taskToDelete, setTaskToDelete] = useState(null);
   const [selectedProject, setSelectedProject] = useState(
     localStorage.getItem("selectedProject") || "all",
   );
@@ -105,16 +107,24 @@ export default function Tasks() {
   };
 
   const deleteTask = async (id) => {
-    const confirmDelete = confirm("Are you sure to delete this task?");
-    if (!confirmDelete) return;
-
     await toast.promise(axios.delete(`/tasks/${id}`), {
       loading: "Deleting task...",
-      success: "Task deleted successfully 🗑️",
+      success: "Task deleted successfully ",
       error: "Delete failed ❌",
     });
 
     await fetchTasks();
+  };
+  const handleConfirmDelete = async () => {
+    if (!taskToDelete) return;
+
+    // ✅ Close popup immediately
+    setShowConfirm(false);
+    const id = taskToDelete;
+    setTaskToDelete(null);
+
+    // ✅ Then run delete in background
+    await deleteTask(id);
   };
   const fetchDevelopers = async () => {
     const res = await axios.get("/users"); // or /developers (based on your API)
@@ -965,8 +975,8 @@ export default function Tasks() {
 
                                       <button
                                         onClick={() => {
-                                          deleteTask(t._id);
-                                          setOpenMenu(null);
+                                          setTaskToDelete(t._id);
+                                          setShowConfirm(true);
                                         }}
                                         className="flex items-center gap-2 w-full px-4 py-2 text-sm hover:bg-gray-100 text-red-700"
                                       >
@@ -987,6 +997,33 @@ export default function Tasks() {
           </div>
         )}
       </div>
+      {showConfirm && (
+        <div className="fixed inset-0 flex items-center justify-center bg-black/40 z-50">
+          <div className="bg-white rounded-2xl p-6 w-[320px] shadow-xl animate-scaleIn">
+            <h2 className="text-lg font-semibold text-gray-800">Delete Task</h2>
+
+            <p className="text-sm text-gray-500 mt-2">
+              Are you sure you want to delete this task?
+            </p>
+
+            <div className="flex justify-end gap-3 mt-6">
+              <button
+                onClick={() => setShowConfirm(false)}
+                className="px-4 py-1.5 rounded-lg bg-gray-200 hover:bg-gray-300 text-sm"
+              >
+                Cancel
+              </button>
+
+              <button
+                onClick={handleConfirmDelete}
+                className="px-4 py-1.5 rounded-lg bg-red-500 hover:bg-red-600 text-white text-sm"
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {showModal && (
         <CreateTask

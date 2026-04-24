@@ -14,6 +14,8 @@ export default function TeamMembers() {
   const [selectedTeam, setSelectedTeam] = useState("all");
   const [currentPage, setCurrentPage] = useState(1);
   const [lastUpdated, setLastUpdated] = useState(null);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [memberToDelete, setMemberToDelete] = useState(null);
   const [loading, setLoading] = useState(true);
   const itemsPerPage = 10;
   // ✅ NEW (developers list)
@@ -73,6 +75,26 @@ export default function TeamMembers() {
     if (!confirm("Delete member?")) return;
     await axios.delete(`/team/${id}`);
     toast.success("Team member deleted successfully");
+    fetchMembers();
+  };
+  const openDeleteModal = (id) => {
+    setMemberToDelete(id);
+    setShowDeleteModal(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    const id = memberToDelete;
+
+    // ✅ instant close
+    setShowDeleteModal(false);
+    setMemberToDelete(null);
+
+    await toast.promise(axios.delete(`/team/${id}`), {
+      loading: "Deleting member...",
+      success: "Team member deleted successfully ",
+      error: "Delete failed ❌",
+    });
+
     fetchMembers();
   };
 
@@ -343,7 +365,7 @@ export default function TeamMembers() {
                                 ✏️
                               </button>
                               <button
-                                onClick={() => deleteMember(m._id)}
+                                onClick={() => openDeleteModal(m._id)}
                                 className="text-red-600"
                               >
                                 🗑
@@ -391,6 +413,33 @@ export default function TeamMembers() {
           </div>
         )}
       </div>
+      {showDeleteModal && (
+        <div className="fixed inset-0 bg-black/40 flex justify-center items-center z-50">
+          <div className="bg-white p-6 rounded-xl w-[320px] shadow-lg">
+            <h2 className="text-lg font-semibold">Delete Member</h2>
+
+            <p className="text-sm text-gray-500 mt-2">
+              Are you sure you want to delete this team member?
+            </p>
+
+            <div className="flex justify-end gap-3 mt-5">
+              <button
+                onClick={() => setShowDeleteModal(false)}
+                className="bg-gray-200 px-4 py-1.5 rounded-lg"
+              >
+                Cancel
+              </button>
+
+              <button
+                onClick={handleConfirmDelete}
+                className="bg-red-500 text-white px-4 py-1.5 rounded-lg"
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ✅ MODAL */}
       {showModal && (
