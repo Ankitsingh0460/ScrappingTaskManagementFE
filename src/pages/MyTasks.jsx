@@ -3,7 +3,7 @@ import axios from "../api/axios";
 import Sidebar from "../components/Sidebar";
 import Header from "../components/Header";
 import { HashLoader } from "react-spinners";
-
+import toast from "react-hot-toast";
 export default function MyTasks() {
   const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -18,6 +18,7 @@ export default function MyTasks() {
       setTasks(res.data);
     } catch (err) {
       console.log(err);
+      toast.error("Failed to fetch tasks");
     } finally {
       setLoading(false);
     }

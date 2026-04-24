@@ -3,19 +3,31 @@ import { useParams } from "react-router-dom";
 import axios from "../api/axios";
 import Sidebar from "../components/Sidebar";
 import Header from "../components/Header";
+import toast from "react-hot-toast";
+import { HashLoader } from "react-spinners"; // ✅ ADD THIS
 
 export default function TaskDetails() {
   const { id } = useParams();
   const [task, setTask] = useState(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     fetchTask();
   }, []);
 
   const fetchTask = async () => {
+    setLoading(true);
     const res = await axios.get(`/tasks`);
+
+    if (!res.data || res.data.length === 0) {
+      toast.error("Task not found");
+      setLoading(false); // ✅ FIX
+      return;
+    }
+
     const found = res.data.find((t) => t._id === id);
     setTask(found);
+    setLoading(false);
   };
 
   // ✅ HANDLE NULL / EMPTY VALUES
@@ -26,14 +38,6 @@ export default function TaskDetails() {
     return val;
   };
 
-  if (!task) {
-    return (
-      <div className="flex items-center justify-center h-screen">
-        <div className="w-10 h-10 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
-      </div>
-    );
-  }
-
   return (
     <div className="flex">
       <Sidebar />
@@ -42,84 +46,105 @@ export default function TaskDetails() {
         <Header />
 
         <div className="p-6">
+          {/* ✅ SAFE ACCESS */}
           <h2 className="text-xl font-semibold mb-4">
-            {task.crawlerName} - Progress Logs
+            Progress Logs -- {task?.crawlerName || "Task"}
           </h2>
 
-          <div className="bg-white p-6 rounded-xl shadow overflow-x-auto">
-            <table className="w-full text-sm border-collapse table-fixed">
-              {/* HEADER */}
-              <thead>
-                <tr className="bg-gray-100 text-gray-700">
-                  <th className="p-3 text-center w-[180px]">Date</th>
-                  <th className="p-3 text-center w-[180px]">Progress %</th>
-                  <th className="p-3 text-left w-[180px]">Work Done</th>
-                  <th className="p-3 text-left w-[180px]">Tester Comment</th>
-                </tr>
-              </thead>
-
-              {/* BODY */}
-              <tbody>
-                {task.progressLogs?.length > 0 ? (
-                  task.progressLogs.map((log, i) => (
-                    <tr key={i} className="border-t h-[60px]">
-                      {/* DATE */}
-                      <td className="p-3 text-center align-middle">
-                        {log?.date ? (
-                          <>
-                            <div>{new Date(log.date).toLocaleDateString()}</div>
-                            <div className="text-xs text-gray-500">
-                              {new Date(log.date).toLocaleTimeString()}
-                            </div>
-                          </>
-                        ) : (
-                          <span className="text-gray-400">-</span>
-                        )}
-                      </td>
-
-                      {/* PROGRESS */}
-                      <td className="p-3 text-center align-middle font-medium">
-                        {log?.progress !== null &&
-                        log?.progress !== undefined ? (
-                          i > 0 &&
-                          task.progressLogs[i - 1]?.progress !== undefined ? (
-                            <>
-                              <span className="text-gray-500">
-                                {task.progressLogs[i - 1].progress}%
-                              </span>
-                              <span className="mx-1">→</span>
-                              <span className="text-indigo-600 font-semibold">
-                                {log.progress}%
-                              </span>
-                            </>
-                          ) : (
-                            `${log.progress}%`
-                          )
-                        ) : (
-                          <span className="text-gray-400">-</span>
-                        )}
-                      </td>
-
-                      {/* WORK DONE */}
-                      <td className="p-3 text-left align-middle">
-                        {safeValue(log?.note)}
-                      </td>
-
-                      {/* TESTER COMMENT */}
-                      <td className="p-3 text-left align-middle text-red-500">
-                        {safeValue(log?.testerComment)}
-                      </td>
+          {/* ✅ UPDATED CONTENT BOX */}
+          <div className="bg-white p-6 rounded-xl shadow min-h-[300px] flex items-center justify-center">
+            {loading ? (
+              // ✅ LOADER INSIDE BOX
+              <HashLoader color="#4F46E5" size={45} />
+            ) : task ? (
+              // ✅ YOUR ORIGINAL TABLE (UNCHANGED)
+              <div className="w-full overflow-x-auto">
+                <table className="w-full text-sm border-collapse table-fixed">
+                  {/* HEADER */}
+                  <thead>
+                    <tr className="bg-gray-100 text-gray-700">
+                      <th className="p-3 text-center w-[180px]">Date</th>
+                      <th className="p-3 text-center w-[180px]">Progress %</th>
+                      <th className="p-3 text-left w-[180px]">Work Done</th>
+                      <th className="p-3 text-left w-[180px]">
+                        Tester Comment
+                      </th>
                     </tr>
-                  ))
-                ) : (
-                  <tr>
-                    <td colSpan="4" className="text-center p-6 text-gray-400">
-                      No progress logs available
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
+                  </thead>
+
+                  {/* BODY */}
+                  <tbody>
+                    {task.progressLogs?.length > 0 ? (
+                      task.progressLogs.map((log, i) => (
+                        <tr key={i} className="border-t h-[60px]">
+                          {/* DATE */}
+                          <td className="p-3 text-center align-middle">
+                            {log?.date ? (
+                              <>
+                                <div>
+                                  {new Date(log.date).toLocaleDateString()}
+                                </div>
+                                <div className="text-xs text-gray-500">
+                                  {new Date(log.date).toLocaleTimeString()}
+                                </div>
+                              </>
+                            ) : (
+                              <span className="text-gray-400">-</span>
+                            )}
+                          </td>
+
+                          {/* PROGRESS */}
+                          <td className="p-3 text-center align-middle font-medium">
+                            {log?.progress !== null &&
+                            log?.progress !== undefined ? (
+                              i > 0 &&
+                              task.progressLogs[i - 1]?.progress !==
+                                undefined ? (
+                                <>
+                                  <span className="text-gray-500">
+                                    {task.progressLogs[i - 1].progress}%
+                                  </span>
+                                  <span className="mx-1">→</span>
+                                  <span className="text-indigo-600 font-semibold">
+                                    {log.progress}%
+                                  </span>
+                                </>
+                              ) : (
+                                `${log.progress}%`
+                              )
+                            ) : (
+                              <span className="text-gray-400">-</span>
+                            )}
+                          </td>
+
+                          {/* WORK DONE */}
+                          <td className="p-3 text-left align-middle">
+                            {safeValue(log?.note)}
+                          </td>
+
+                          {/* TESTER COMMENT */}
+                          <td className="p-3 text-left align-middle text-red-500">
+                            {safeValue(log?.testerComment)}
+                          </td>
+                        </tr>
+                      ))
+                    ) : (
+                      <tr>
+                        <td
+                          colSpan="4"
+                          className="text-center p-6 text-gray-400"
+                        >
+                          No progress logs available
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              // ✅ TASK NOT FOUND
+              <p className="text-gray-400">Task not found ❌</p>
+            )}
           </div>
         </div>
       </div>

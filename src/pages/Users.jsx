@@ -4,6 +4,7 @@ import Sidebar from "../components/Sidebar";
 import Header from "../components/Header";
 import { useRef } from "react";
 import { HashLoader } from "react-spinners";
+import toast from "react-hot-toast";
 export default function Users() {
   const [users, setUsers] = useState([]);
   const [error, setError] = useState("");
@@ -52,13 +53,13 @@ export default function Users() {
 
   const createUser = async () => {
     if (!form.name || !form.email || !form.password || !form.role) {
-      alert("All fields are mandatory");
+      toast.error("All fields are mandatory");
       return;
     }
 
     try {
       await axios.post("/users", form);
-
+      toast.success("User created successfully");
       setForm({
         name: "",
         email: "",
@@ -69,7 +70,7 @@ export default function Users() {
       fetchUsers();
     } catch (err) {
       console.log(err);
-      alert(err.response?.data?.msg || "Error creating user");
+      toast.error(err.response?.data?.msg || "Error creating user");
     }
   };
   const handleEdit = (u) => {
@@ -92,7 +93,7 @@ export default function Users() {
   const updateUser = async () => {
     try {
       await axios.put(`/users/${editUserId}`, form);
-      alert("User updated successfully");
+      toast.success("User updated successfully");
       setForm({
         name: "",
         email: "",
@@ -106,7 +107,7 @@ export default function Users() {
       fetchUsers();
     } catch (err) {
       console.log(err);
-      alert(err.response?.data?.msg || "Error updating user");
+      toast.error(err.response?.data?.msg || "Error updating user");
     }
   };
 
@@ -116,9 +117,10 @@ export default function Users() {
       fetchUsers();
       setShowDeleteModal(false);
       setSelectedUserId(null);
+      toast.success("User deleted successfully");
     } catch (err) {
       console.log(err);
-      alert("Error deleting user");
+      toast.error("Error deleting user");
     }
   };
 

@@ -84,7 +84,7 @@ export default function Header() {
           {/* new */}
           <div className="flex flex-col leading-tight">
             <span className="text-sm font-medium text-gray-700">
-              {user?.name}
+              {user?.name.toUpperCase()}
             </span>
             <span className="text-[11px] text-gray-500 capitalize">
               {user?.role}

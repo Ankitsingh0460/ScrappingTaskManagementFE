@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import axios from "../api/axios";
-
+import toast from "react-hot-toast";
 export default function CreateTask({ onClose, refresh, editTaskData }) {
   const [form, setForm] = useState({
     crawlerName: "",
@@ -65,7 +65,7 @@ export default function CreateTask({ onClose, refresh, editTaskData }) {
         !projectId ||
         !developer ||
         !tester ||
-        !assignDate ||
+        !assignDate ||  
         !expectedCompletionDate
       ) {
         setError("All fields marked with * are required");
@@ -82,9 +82,11 @@ export default function CreateTask({ onClose, refresh, editTaskData }) {
 
       refresh();
       onClose();
+      toast.success("Task updated successfully");
     } catch (err) {
       console.error(err);
       setError("Something went wrong");
+      toast.error("Failed to update task");
     }
   };
 

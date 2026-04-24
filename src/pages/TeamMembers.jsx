@@ -5,7 +5,7 @@ import axios from "../api/axios";
 import { saveAs } from "file-saver";
 import * as XLSX from "xlsx-js-style";
 import { HashLoader } from "react-spinners";
-
+import toast from "react-hot-toast";
 export default function TeamMembers() {
   const [members, setMembers] = useState([]);
   const [form, setForm] = useState({});
@@ -57,8 +57,10 @@ export default function TeamMembers() {
 
     if (editData) {
       await axios.put(`/team/${editData._id}`, payload);
+      toast.success("Team member updated successfully");
     } else {
       await axios.post("/team", payload); // ✅ userId will go from form
+      toast.success("Team member added successfully");
     }
 
     setShowModal(false);
@@ -70,6 +72,7 @@ export default function TeamMembers() {
   const deleteMember = async (id) => {
     if (!confirm("Delete member?")) return;
     await axios.delete(`/team/${id}`);
+    toast.success("Team member deleted successfully");
     fetchMembers();
   };
 
@@ -181,9 +184,19 @@ export default function TeamMembers() {
   // ✅ FILTER
   const filteredMembers = members
     .filter((m) => {
+      const currentUserId = String(user?._id || user?.id);
+      const memberUserId = String(m.userId?._id || m.userId);
+
+      // ✅ Developer → only own data
+      if (user?.role === "developer") {
+        if (memberUserId !== currentUserId) return false;
+      }
+
+      // ✅ Team filter (existing)
       if (selectedTeam !== "all" && m.team !== selectedTeam) {
         return false;
       }
+
       return true;
     })
     .sort((a, b) => {
@@ -191,7 +204,7 @@ export default function TeamMembers() {
       const bId = String(b.userId?._id || b.userId);
       const currentId = String(user?._id || user?.id);
 
-      if (aId === currentId) return -1; // move to top
+      if (aId === currentId) return -1;
       if (bId === currentId) return 1;
       return 0;
     });

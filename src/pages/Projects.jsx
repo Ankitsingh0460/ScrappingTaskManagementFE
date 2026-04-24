@@ -4,7 +4,7 @@ import Sidebar from "../components/Sidebar";
 import Header from "../components/Header";
 import { Pencil, Trash } from "lucide-react";
 import { HashLoader } from "react-spinners";
-
+import toast from "react-hot-toast";
 export default function Projects() {
   const [projects, setProjects] = useState([]);
   const [name, setName] = useState("");
@@ -25,6 +25,7 @@ export default function Projects() {
     if (!name.trim()) return;
     setLoading(true);
     await axios.post("/projects", { name });
+    toast.success("Project created successfully");
     setName("");
     fetchProjects();
     setLoading(false);
@@ -32,13 +33,14 @@ export default function Projects() {
 
   // ✅ NEW: Delete Project
   const deleteProject = async (id) => {
-    const confirmDelete = confirm(
+    const confirmDelete = window.confirm(
       "Are you sure you want to delete this project?",
     );
     if (!confirmDelete) return;
 
     await axios.delete(`/projects/${id}`);
     fetchProjects();
+    toast.success("Project deleted successfully");
   };
 
   // ✅ NEW: Edit Project
@@ -51,6 +53,7 @@ export default function Projects() {
     });
 
     fetchProjects();
+    toast.success("Project updated successfully");
   };
 
   return (

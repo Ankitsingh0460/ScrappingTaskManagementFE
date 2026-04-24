@@ -5,7 +5,7 @@ import axios from "../api/axios";
 import CreateTask from "./CreateTask";
 import { useNavigate } from "react-router-dom";
 import { HashLoader } from "react-spinners";
-
+import toast from "react-hot-toast";
 export default function Tasks() {
   const [tasks, setTasks] = useState([]);
   const [showModal, setShowModal] = useState(false);
@@ -67,12 +67,21 @@ export default function Tasks() {
 
   const fetchProjects = async () => {
     const res = await axios.get("/projects");
+    if (!res.data) {
+      toast.error("Failed to fetch projects");
+      return;
+    }
     setProjects(res.data);
   };
 
   const fetchTasks = async () => {
     setLoading(true);
     const res = await axios.get("/tasks");
+    if (!res.data) {
+      toast.error("Failed to fetch tasks");
+      setLoading(false);
+      return;
+    }
     setTasks(res.data);
     setLoading(false);
   };
@@ -86,15 +95,26 @@ export default function Tasks() {
   };
 
   const verifyTask = async (id) => {
-    await axios.put(`/tasks/${id}/verify`);
-    fetchTasks();
+    await toast.promise(axios.put(`/tasks/${id}/verify`), {
+      loading: "Verifying task...",
+      success: "Task verified successfully ✅",
+      error: "Failed to verify task ❌",
+    });
+
+    await fetchTasks();
   };
 
   const deleteTask = async (id) => {
     const confirmDelete = confirm("Are you sure to delete this task?");
     if (!confirmDelete) return;
-    await axios.delete(`/tasks/${id}`);
-    fetchTasks();
+
+    await toast.promise(axios.delete(`/tasks/${id}`), {
+      loading: "Deleting task...",
+      success: "Task deleted successfully 🗑️",
+      error: "Delete failed ❌",
+    });
+
+    await fetchTasks();
   };
   const fetchDevelopers = async () => {
     const res = await axios.get("/users"); // or /developers (based on your API)
@@ -155,54 +175,132 @@ export default function Tasks() {
     return new Date(b.createdAt || b._id) - new Date(a.createdAt || a._id);
   });
 
+  // const handleFormSubmit = async (data) => {
+  //   const { type, taskId, currentValue } = formModal;
+
+  //   if (type === "progress") {
+  //     if (data.progress < currentValue) {
+  //       toast.error("Progress cannot decrease ❌");
+  //       return;
+  //     }
+  //     await axios.put(`/tasks/${taskId}/progress`, {
+
+  //       progress: data.progress,
+
+  //       note: data.note,
+
+  //     });
+  //   }
+
+  //   if (type === "TESTING SHEET") {
+  //     await axios.put(`/tasks/${taskId}`, {
+  //       testingSheetUrl: data.url,
+  //     });
+  //   }
+
+  //   if (type === "STUCK REASON") {
+  //     await axios.put(`/tasks/${taskId}`, {
+  //       stuckReason: data.reason,
+  //     });
+  //   }
+  //   if (type === "LEAD COMMENT") {
+  //     await axios.put(`/tasks/${taskId}/lead-comment`, {
+  //       comment: data.comment,
+  //     });
+  //   }
+
+  //   if (type === "TESTER COMMENT") {
+  //     await axios.put(`/tasks/${taskId}/tester-comment`, {
+  //       comment: data.comment,
+  //     });
+  //   }
+
+  //   if (type === "PENALTY") {
+  //     await axios.put(`/tasks/${taskId}/penalty`, {
+  //       comment: data.comment,
+  //     });
+  //   }
+
+  //   setFormModal({ open: false });
+  //   fetchTasks();
+  // };
+
+  // ✅ ADD THIS BELOW useNavigate()
   const handleFormSubmit = async (data) => {
     const { type, taskId, currentValue } = formModal;
 
-    if (type === "progress") {
-      if (data.progress < currentValue) {
-        alert("Progress cannot decrease ❌");
-        return;
-      }
-      await axios.put(`/tasks/${taskId}/progress`, {
-        progress: data.progress,
-        note: data.note,
-      });
-    }
-
-    if (type === "TESTING SHEET") {
-      await axios.put(`/tasks/${taskId}`, {
-        testingSheetUrl: data.url,
-      });
-    }
-
-    if (type === "STUCK REASON") {
-      await axios.put(`/tasks/${taskId}`, {
-        stuckReason: data.reason,
-      });
-    }
-    if (type === "LEAD COMMENT") {
-      await axios.put(`/tasks/${taskId}/lead-comment`, {
-        comment: data.comment,
-      });
-    }
-
-    if (type === "TESTER COMMENT") {
-      await axios.put(`/tasks/${taskId}/tester-comment`, {
-        comment: data.comment,
-      });
-    }
-
-    if (type === "PENALTY") {
-      await axios.put(`/tasks/${taskId}/penalty`, {
-        comment: data.comment,
-      });
-    }
-
+    // ✅ CLOSE MODAL INSTANTLY
     setFormModal({ open: false });
-    fetchTasks();
-  };
 
-  // ✅ ADD THIS BELOW useNavigate()
+    try {
+      const promise = async () => {
+        if (type === "progress") {
+          if (data.progress < currentValue) {
+            throw new Error("Progress cannot decrease ❌");
+          }
+
+          await axios.put(`/tasks/${taskId}/progress`, {
+            progress: data.progress,
+            note: data.note,
+          });
+
+          return "Progress updated successfully 🚀";
+        }
+
+        if (type === "TESTING SHEET") {
+          await axios.put(`/tasks/${taskId}`, {
+            testingSheetUrl: data.url,
+          });
+
+          return "Testing sheet updated successfully ✅";
+        }
+
+        if (type === "STUCK REASON") {
+          await axios.put(`/tasks/${taskId}`, {
+            stuckReason: data.reason,
+          });
+
+          return "Stuck reason updated successfully ⚠️";
+        }
+
+        if (type === "TESTER COMMENT") {
+          await axios.put(`/tasks/${taskId}/tester-comment`, {
+            comment: data.comment,
+          });
+
+          return "Tester comment added successfully 💬";
+        }
+
+        if (type === "LEAD COMMENT") {
+          await axios.put(`/tasks/${taskId}/lead-comment`, {
+            comment: data.comment,
+          });
+
+          return "Lead comment added successfully 🧑‍💼";
+        }
+
+        if (type === "PENALTY") {
+          await axios.put(`/tasks/${taskId}/penalty`, {
+            comment: data.comment,
+          });
+
+          return "Penalty added successfully ⚡";
+        }
+      };
+
+      // ✅ Toast handles loading + success
+      await toast.promise(promise(), {
+        loading: "Saving...",
+        success: (msg) => msg,
+        error: (err) => err.message || "Something went wrong ❌",
+      });
+
+      // ✅ Refresh after success
+      await fetchTasks();
+    } catch (err) {
+      toast.error(err.message || "Something went wrong ❌");
+    }
+  };
   const getDueStatus = (task) => {
     if (task.status === "hold") return null;
     if (!task?.expectedCompletionDate) return null;
@@ -237,8 +335,13 @@ export default function Tasks() {
   // ];
 
   const markHold = async (id) => {
-    await axios.put(`/tasks/${id}/hold`); // 👈 backend API
-    fetchTasks();
+    await toast.promise(axios.put(`/tasks/${id}/hold`), {
+      loading: "Marking as hold...",
+      success: "Task marked as hold ⏸️",
+      error: "Failed to update ❌",
+    });
+
+    await fetchTasks();
   };
 
   const filteredCount = tasks.filter((t) => {
@@ -643,8 +746,11 @@ export default function Tasks() {
                               </div>
 
                               {t.stuckReason && (
-                                <div className="absolute left-0 bottom-full mb-2 hidden group-hover:block bg-gray-900 text-white text-xs p-2 rounded shadow-xl w-[220px] z-[9999] break-words">
-                                  {t.stuckReason}
+                                <div className="absolute left-0 bottom-full mb-2 hidden group-hover:block z-[9999]">
+                                  {/* 👇 Important wrapper */}
+                                  <div className="bg-gray-900 text-white text-xs p-2 rounded shadow-xl w-[220px] max-h-[120px] overflow-y-auto break-words">
+                                    {t.stuckReason}
+                                  </div>
                                 </div>
                               )}
                             </td>
@@ -665,8 +771,11 @@ export default function Tasks() {
                               </div>
 
                               {lastLog?.testerComment && (
-                                <div className="absolute left-0 bottom-full mb-2 hidden group-hover:block bg-gray-900 text-white text-xs p-2 rounded shadow-xl w-[180px] z-[9999] break-words">
-                                  {lastLog.testerComment}
+                                <div className="absolute left-0 bottom-full mb-2 hidden group-hover:block z-[9999]">
+                                  {/* 👇 Wrapper to keep hover */}
+                                  <div className="bg-gray-900 text-white text-xs p-2 rounded shadow-xl w-[200px] max-h-[120px] overflow-y-auto break-words pointer-events-auto">
+                                    {lastLog.testerComment}
+                                  </div>
                                 </div>
                               )}
                             </td>
@@ -973,12 +1082,12 @@ function FormBox({ type, onSubmit, onClose, currentValue }) {
             // ✅ VALIDATION FOR PROGRESS FORM
             if (type === "progress") {
               if (!form.progress && form.progress !== 0) {
-                alert("Please enter progress % ❌");
+                toast.error("Please enter progress % ❌");
                 return;
               }
 
               if (!form.note || form.note.trim() === "") {
-                alert("Please enter work done today ❌");
+                toast.error("Please enter work done today ❌");
                 return;
               }
             }
