@@ -1,5 +1,6 @@
 import { createContext, useState, useEffect } from "react";
 import axios from "../api/axios";
+import { Navigate } from "react-router-dom";
 
 export const AuthContext = createContext();
 
@@ -47,9 +48,11 @@ export const AuthProvider = ({ children }) => {
     } catch (error) {
       console.error("Logout error:", error);
     }
+   
 
     localStorage.clear();
     setUser(null);
+     Navigate("/login");
   };
 
   return (
