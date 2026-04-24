@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import axios from "../api/axios";
 import { saveAs } from "file-saver";
 import * as XLSX from "xlsx-js-style";
+import { HashLoader } from "react-spinners";
 
 export default function TeamMembers() {
   const [members, setMembers] = useState([]);
@@ -13,6 +14,7 @@ export default function TeamMembers() {
   const [selectedTeam, setSelectedTeam] = useState("all");
   const [currentPage, setCurrentPage] = useState(1);
   const [lastUpdated, setLastUpdated] = useState(null);
+  const [loading, setLoading] = useState(true);
   const itemsPerPage = 10;
   // ✅ NEW (developers list)
   const [developers, setDevelopers] = useState([]);
@@ -26,8 +28,10 @@ export default function TeamMembers() {
   }, []);
 
   const fetchMembers = async () => {
+    setLoading(true);
     const res = await axios.get("/team");
     setMembers(res.data);
+    setLoading(false);
   };
 
   // ✅ NEW (fetch developers)
@@ -213,161 +217,166 @@ export default function TeamMembers() {
       {/* MAIN */}
       <div className="flex-1 bg-gray-100 h-screen flex flex-col">
         <Header />
-
-        <div className="p-4 overflow-y-auto">
-          {/* HEADER */}
-          <div className="flex justify-between items-center mb-4">
-            <h1 className="text-xl font-bold">Team Members</h1>
-
-            <div className="flex items-center gap-3">
-              <span className="text-sm text-gray-600">
-                Showing {currentMembers.length} of {totalResults} results
-              </span>
-
-              {/* ✅ NEW EXPORT BUTTON */}
-              {user?.role === "admin" && (
-                <button
-                  onClick={exportToExcel}
-                  className="bg-green-600 text-white px-3 py-2 rounded-lg text-sm hover:bg-green-700"
-                >
-                  ⬇ Export Excel
-                </button>
-              )}
-              {user?.role === "admin" && (
-                <button
-                  onClick={() => {
-                    setForm({});
-                    setEditData(null);
-                    setShowModal(true);
-                  }}
-                  className="bg-indigo-600 text-white px-4 py-2 rounded-lg"
-                >
-                  + Add Member
-                </button>
-              )}
-            </div>
+        {loading ? (
+          <div className="flex justify-center items-center h-[60vh]">
+            <HashLoader color="#4F46E5" />
           </div>
+        ) : (
+          <div className="p-4 overflow-y-auto">
+            {/* HEADER */}
+            <div className="flex justify-between items-center mb-4">
+              <h1 className="text-xl font-bold">Team Members</h1>
 
-          {/* FILTER */}
-          <div className="flex justify-between items-center mb-4">
-            <div className="flex gap-2">
-              <select
-                value={selectedTeam}
-                onChange={(e) => setSelectedTeam(e.target.value)}
-                className="border px-3 py-2 rounded bg-white"
-              >
-                <option value="all">All Teams</option>
-                <option value="IDE">IDE</option>
-                <option value="SPRINKLER">SPRINKLER</option>
-              </select>
+              <div className="flex items-center gap-3">
+                <span className="text-sm text-gray-600">
+                  Showing {currentMembers.length} of {totalResults} results
+                </span>
+
+                {/* ✅ NEW EXPORT BUTTON */}
+                {user?.role === "admin" && (
+                  <button
+                    onClick={exportToExcel}
+                    className="bg-green-600 text-white px-3 py-2 rounded-lg text-sm hover:bg-green-700"
+                  >
+                    ⬇ Export Excel
+                  </button>
+                )}
+                {user?.role === "admin" && (
+                  <button
+                    onClick={() => {
+                      setForm({});
+                      setEditData(null);
+                      setShowModal(true);
+                    }}
+                    className="bg-indigo-600 text-white px-4 py-2 rounded-lg"
+                  >
+                    + Add Member
+                  </button>
+                )}
+              </div>
             </div>
 
-            {/* ✅ LAST UPDATED */}
-            <div className="text-sm text-gray-600">
-              Last Updated:{" "}
-              {lastUpdated
-                ? new Date(lastUpdated).toLocaleString()
-                : "No updates yet"}
+            {/* FILTER */}
+            <div className="flex justify-between items-center mb-4">
+              <div className="flex gap-2">
+                <select
+                  value={selectedTeam}
+                  onChange={(e) => setSelectedTeam(e.target.value)}
+                  className="border px-3 py-2 rounded bg-white"
+                >
+                  <option value="all">All Teams</option>
+                  <option value="IDE">IDE</option>
+                  <option value="SPRINKLER">SPRINKLER</option>
+                </select>
+              </div>
+
+              {/* ✅ LAST UPDATED */}
+              <div className="text-sm text-gray-600">
+                Last Updated:{" "}
+                {lastUpdated
+                  ? new Date(lastUpdated).toLocaleString()
+                  : "No updates yet"}
+              </div>
             </div>
-          </div>
 
-          {/* TABLE */}
-          <div className="bg-white rounded shadow overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead className="bg-gray-100">
-                <tr>
-                  <th className="p-3">Name</th>
-                  <th className="p-3">Team</th>
-                  <th className="p-3">Position</th>
-                  <th className="p-3">Joining</th>
-                  <th className="p-3">Skills</th>
-                  <th className="p-3">Action</th>
-                </tr>
-              </thead>
+            {/* TABLE */}
+            <div className="bg-white rounded shadow overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead className="bg-gray-100">
+                  <tr>
+                    <th className="p-3">Name</th>
+                    <th className="p-3">Team</th>
+                    <th className="p-3">Position</th>
+                    <th className="p-3">Joining</th>
+                    <th className="p-3">Skills</th>
+                    <th className="p-3">Action</th>
+                  </tr>
+                </thead>
 
-              <tbody>
-                {currentMembers.map((m) => {
-                  // ✅ FIXED MATCH (IMPORTANT)
-                  const isOwn =
-                    String(m.userId?._id || m.userId) ===
-                    String(user?._id || user?.id);
+                <tbody>
+                  {currentMembers.map((m) => {
+                    // ✅ FIXED MATCH (IMPORTANT)
+                    const isOwn =
+                      String(m.userId?._id || m.userId) ===
+                      String(user?._id || user?.id);
 
-                  return (
-                    <tr
-                      key={m._id}
-                      className={`border-t text-center ${
-                        isOwn ? "bg-indigo-50 font-medium" : ""
-                      }`}
-                    >
-                      <td className="p-3">{m.name}</td>
-                      <td className="p-3">{m.team}</td>
-                      <td className="p-3">{m.position}</td>
-                      <td className="p-3">
-                        {m.joiningDate
-                          ? new Date(m.joiningDate).toLocaleDateString()
-                          : "-"}
-                      </td>
-                      <td className="p-3 max-w-[200px] break-words whitespace-normal">
-                        {m.skills?.join(", ")}
-                      </td>
+                    return (
+                      <tr
+                        key={m._id}
+                        className={`border-t text-center ${
+                          isOwn ? "bg-indigo-50 font-medium" : ""
+                        }`}
+                      >
+                        <td className="p-3">{m.name}</td>
+                        <td className="p-3">{m.team}</td>
+                        <td className="p-3">{m.position}</td>
+                        <td className="p-3">
+                          {m.joiningDate
+                            ? new Date(m.joiningDate).toLocaleDateString()
+                            : "-"}
+                        </td>
+                        <td className="p-3 max-w-[200px] break-words whitespace-normal">
+                          {m.skills?.join(", ")}
+                        </td>
 
-                      <td className="p-3">
-                        {/* 👑 ADMIN */}
-                        {user?.role === "admin" && (
-                          <>
+                        <td className="p-3">
+                          {/* 👑 ADMIN */}
+                          {user?.role === "admin" && (
+                            <>
+                              <button
+                                onClick={() => editMember(m)}
+                                className="mr-2 text-blue-600"
+                              >
+                                ✏️
+                              </button>
+                              <button
+                                onClick={() => deleteMember(m._id)}
+                                className="text-red-600"
+                              >
+                                🗑
+                              </button>
+                            </>
+                          )}
+
+                          {/* 👨‍💻 DEV → only own */}
+                          {user?.role === "developer" && isOwn && (
                             <button
                               onClick={() => editMember(m)}
-                              className="mr-2 text-blue-600"
+                              className="text-indigo-600"
                             >
-                              ✏️
+                              Edit Skills
                             </button>
-                            <button
-                              onClick={() => deleteMember(m._id)}
-                              className="text-red-600"
-                            >
-                              🗑
-                            </button>
-                          </>
-                        )}
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+              <div className="flex justify-center items-center gap-2 mt-4 mb-4">
+                <button
+                  disabled={currentPage === 1}
+                  onClick={() => setCurrentPage((prev) => prev - 1)}
+                  className="px-3 py-1 border rounded disabled:opacity-50"
+                >
+                  Prev
+                </button>
 
-                        {/* 👨‍💻 DEV → only own */}
-                        {user?.role === "developer" && isOwn && (
-                          <button
-                            onClick={() => editMember(m)}
-                            className="text-indigo-600"
-                          >
-                            Edit Skills
-                          </button>
-                        )}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-            <div className="flex justify-center items-center gap-2 mt-4 mb-4">
-              <button
-                disabled={currentPage === 1}
-                onClick={() => setCurrentPage((prev) => prev - 1)}
-                className="px-3 py-1 border rounded disabled:opacity-50"
-              >
-                Prev
-              </button>
+                <span className="text-sm">
+                  Page {currentPage} of {totalPages}
+                </span>
 
-              <span className="text-sm">
-                Page {currentPage} of {totalPages}
-              </span>
-
-              <button
-                disabled={currentPage === totalPages}
-                onClick={() => setCurrentPage((prev) => prev + 1)}
-                className="px-3 py-1 border rounded disabled:opacity-50"
-              >
-                Next
-              </button>
+                <button
+                  disabled={currentPage === totalPages}
+                  onClick={() => setCurrentPage((prev) => prev + 1)}
+                  className="px-3 py-1 border rounded disabled:opacity-50"
+                >
+                  Next
+                </button>
+              </div>
             </div>
           </div>
-        </div>
+        )}
       </div>
 
       {/* ✅ MODAL */}

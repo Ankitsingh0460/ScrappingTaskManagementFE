@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import axios from "../api/axios";
 import CreateTask from "./CreateTask";
 import { useNavigate } from "react-router-dom";
+import { HashLoader } from "react-spinners";
 
 export default function Tasks() {
   const [tasks, setTasks] = useState([]);
@@ -12,6 +13,7 @@ export default function Tasks() {
   const [projects, setProjects] = useState([]);
   const [search, setSearch] = useState(localStorage.getItem("search") || "");
   const [editTaskData, setEditTaskData] = useState(null);
+  const [loading, setLoading] = useState(true);
   const [selectedProject, setSelectedProject] = useState(
     localStorage.getItem("selectedProject") || "all",
   );
@@ -69,8 +71,10 @@ export default function Tasks() {
   };
 
   const fetchTasks = async () => {
+    setLoading(true);
     const res = await axios.get("/tasks");
     setTasks(res.data);
+    setLoading(false);
   };
 
   const formatDate = (date) => {
@@ -159,7 +163,6 @@ export default function Tasks() {
         alert("Progress cannot decrease ❌");
         return;
       }
-
       await axios.put(`/tasks/${taskId}/progress`, {
         progress: data.progress,
         note: data.note,
@@ -320,225 +323,245 @@ export default function Tasks() {
       <div className="flex-1 bg-gray-100 h-screen overflow-hidden flex flex-col">
         {" "}
         <Header />
-        <div className="p-4">
-          <div className="flex justify-between items-center mb-3">
-            {/* LEFT SIDE (Search + Filters) */}
-            <div className="flex items-center gap-2">
-              {/* STATUS FILTER */}
-              {/* PROJECT FILTER */}
-              <select
-                value={selectedProject}
-                onChange={(e) => setSelectedProject(e.target.value)}
-                className="border px-3 py-2 rounded-lg text-sm bg-white"
-              >
-                <option value="all">All Projects</option>
-                {projects.map((proj) => (
-                  <option key={proj._id} value={proj._id}>
-                    {proj.name}
-                  </option>
-                ))}
-              </select>
-              <select
-                value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value)}
-                className="border px-3 py-2 rounded-lg text-sm bg-white"
-              >
-                <option value="all">All Task</option>
-                <option value="completed">Completed</option>
-                <option value="overdue">Over Due</option>
-                <option value="hold">On Hold</option>
-                {user?.role === "admin" && (
-                  <option value="dev-done">Dev Done</option>
-                )}
-                <option value="in-progress">In Progress</option>
-                <option value="today">Today Due</option>
-                <option value="tomorrow">Tomorrow Due</option>
-                <option value="week">This Week Due</option>
-                {user?.role === "admin" && (
-                  <option value="stuck">Stuck By Dev</option>
-                )}
-                <option value="penalty">Penalty Crawlers</option> {/* ✅ NEW */}
-              </select>
-              {user?.role === "admin" && (
+        {loading ? (
+          <div className="flex justify-center items-center h-[60vh]">
+            <HashLoader color="#4F46E5" />
+          </div>
+        ) : (
+          <div className="p-4">
+            <div className="flex justify-between items-center mb-3">
+              {/* LEFT SIDE (Search + Filters) */}
+              <div className="flex items-center gap-2">
+                {/* STATUS FILTER */}
+                {/* PROJECT FILTER */}
                 <select
-                  value={selectedDeveloper}
-                  onChange={(e) => setSelectedDeveloper(e.target.value)}
+                  value={selectedProject}
+                  onChange={(e) => setSelectedProject(e.target.value)}
                   className="border px-3 py-2 rounded-lg text-sm bg-white"
                 >
-                  <option value="all">All Developers</option>
-
-                  {developers.map((dev) => (
-                    <option key={dev._id} value={dev._id}>
-                      {dev.name}
+                  <option value="all">All Projects</option>
+                  {projects.map((proj) => (
+                    <option key={proj._id} value={proj._id}>
+                      {proj.name}
                     </option>
                   ))}
                 </select>
+                <select
+                  value={statusFilter}
+                  onChange={(e) => setStatusFilter(e.target.value)}
+                  className="border px-3 py-2 rounded-lg text-sm bg-white"
+                >
+                  <option value="all">All Task</option>
+                  <option value="completed">Completed</option>
+                  <option value="overdue">Over Due</option>
+                  <option value="hold">On Hold</option>
+                  {user?.role === "admin" && (
+                    <option value="dev-done">Dev Done</option>
+                  )}
+                  <option value="in-progress">In Progress</option>
+                  <option value="today">Today Due</option>
+                  <option value="tomorrow">Tomorrow Due</option>
+                  <option value="week">This Week Due</option>
+                  {user?.role === "admin" && (
+                    <option value="stuck">Stuck By Dev</option>
+                  )}
+                  <option value="penalty">Penalty Crawlers</option>{" "}
+                  {/* ✅ NEW */}
+                </select>
+                {user?.role === "admin" && (
+                  <select
+                    value={selectedDeveloper}
+                    onChange={(e) => setSelectedDeveloper(e.target.value)}
+                    className="border px-3 py-2 rounded-lg text-sm bg-white"
+                  >
+                    <option value="all">All Developers</option>
+
+                    {developers.map((dev) => (
+                      <option key={dev._id} value={dev._id}>
+                        {dev.name}
+                      </option>
+                    ))}
+                  </select>
+                )}
+
+                <input
+                  type="text"
+                  placeholder="Search crawler..."
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  className="border px-3 py-2 rounded-lg text-sm w-[220px] focus:outline-none focus:ring-2 focus:ring-indigo-400"
+                />
+              </div>
+              <div className="flex items-center gap-2 text-sm">
+                <span className="px-2 py-1 rounded-md bg-indigo-100 text-indigo-700 font-medium">
+                  Showing {filteredCount}
+                </span>
+
+                <span className="text-gray-500">/ {tasks.length} total</span>
+              </div>
+              {/* RIGHT SIDE (Create Button) */}
+              {user?.role === "admin" && (
+                <button
+                  onClick={() => setShowModal(true)}
+                  className="bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-indigo-700"
+                >
+                  + Create Task
+                </button>
               )}
-
-              <input
-                type="text"
-                placeholder="Search crawler..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="border px-3 py-2 rounded-lg text-sm w-[220px] focus:outline-none focus:ring-2 focus:ring-indigo-400"
-              />
             </div>
-            <div className="flex items-center gap-2 text-sm">
-              <span className="px-2 py-1 rounded-md bg-indigo-100 text-indigo-700 font-medium">
-                Showing {filteredCount}
-              </span>
 
-              <span className="text-gray-500">/ {tasks.length} total</span>
-            </div>
-            {/* RIGHT SIDE (Create Button) */}
-            {user?.role === "admin" && (
-              <button
-                onClick={() => setShowModal(true)}
-                className="bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-indigo-700"
-              >
-                + Create Task
-              </button>
-            )}
-          </div>
+            <div className="bg-white rounded-xl shadow p-4 overflow-x-auto">
+              {/* ✅ ONLY TABLE SCROLL */}
+              <div className="h-[calc(115vh-240px)] overflow-y-auto">
+                <table className="w-full text-sm border-collapse">
+                  <thead className="sticky top-0 z-20 bg-gray-100">
+                    <tr className="bg-gray-100">
+                      <th className="p-3 w-[120px] text-center">Crawler</th>
+                      <th className="p-3 w-[120px] text-center">Project</th>
+                      <th className="p-3 w-[120px] text-center">Developer</th>
+                      <th className="p-3 w-[120px] text-center">Tester</th>
+                      <th className="p-3 w-[120px] text-center">Assign</th>
+                      <th className="p-3 w-[120px] text-center">Due</th>
+                      <th className="p-3 w-[140px] text-center">Progress</th>
+                      <th className="p-3 w-[120px] text-center">Status</th>
+                      <th className="p-3 w-[120px] text-center">
+                        Stuck Reason
+                      </th>
+                      <th className="p-3 w-[120px] text-center">
+                        Testing Sheet
+                      </th>
+                      <th className="p-3 w-[120px] text-center">
+                        Tester Comment
+                      </th>
+                      <th className="p-3 w-[140px] text-center">
+                        Lead Comment
+                      </th>
+                      <th className="p-3 w-[120px] text-center">Penalty</th>
+                      <th className="p-3 w-[120px] text-center">Action</th>
+                    </tr>
+                  </thead>
 
-          <div className="bg-white rounded-xl shadow p-4 overflow-x-auto">
-            {/* ✅ ONLY TABLE SCROLL */}
-            <div className="h-[calc(115vh-240px)] overflow-y-auto">
-              <table className="w-full text-sm border-collapse">
-                <thead className="sticky top-0 z-20 bg-gray-100">
-                  <tr className="bg-gray-100">
-                    <th className="p-3 w-[120px] text-center">Crawler</th>
-                    <th className="p-3 w-[120px] text-center">Project</th>
-                    <th className="p-3 w-[120px] text-center">Developer</th>
-                    <th className="p-3 w-[120px] text-center">Tester</th>
-                    <th className="p-3 w-[120px] text-center">Assign</th>
-                    <th className="p-3 w-[120px] text-center">Due</th>
-                    <th className="p-3 w-[140px] text-center">Progress</th>
-                    <th className="p-3 w-[120px] text-center">Status</th>
-                    <th className="p-3 w-[120px] text-center">Stuck Reason</th>
-                    <th className="p-3 w-[120px] text-center">Testing Sheet</th>
-                    <th className="p-3 w-[120px] text-center">
-                      Tester Comment
-                    </th>
-                    <th className="p-3 w-[140px] text-center">Lead Comment</th>
-                    <th className="p-3 w-[120px] text-center">Penalty</th>
-                    <th className="p-3 w-[120px] text-center">Action</th>
-                  </tr>
-                </thead>
-
-                <tbody>
-                  {tasks
-                    .filter((t) => {
-                      // ✅ SEARCH FILTER (ADD HERE — TOP)
-                      if (search) {
-                        if (
-                          !t.crawlerName
-                            ?.toLowerCase()
-                            .includes(search.toLowerCase())
-                        ) {
-                          return false;
+                  <tbody>
+                    {tasks
+                      .filter((t) => {
+                        // ✅ SEARCH FILTER (ADD HERE — TOP)
+                        if (search) {
+                          if (
+                            !t.crawlerName
+                              ?.toLowerCase()
+                              .includes(search.toLowerCase())
+                          ) {
+                            return false;
+                          }
                         }
-                      }
 
-                      // ✅ PROJECT FILTER
-                      if (selectedProject !== "all") {
-                        let taskProjectId =
-                          typeof t.projectId === "object"
-                            ? t.projectId._id
-                            : t.projectId;
+                        // ✅ PROJECT FILTER
+                        if (selectedProject !== "all") {
+                          let taskProjectId =
+                            typeof t.projectId === "object"
+                              ? t.projectId._id
+                              : t.projectId;
 
-                        if (String(taskProjectId) !== String(selectedProject)) {
-                          return false;
+                          if (
+                            String(taskProjectId) !== String(selectedProject)
+                          ) {
+                            return false;
+                          }
                         }
-                      }
-                      // ✅ DEVELOPER FILTER
-                      if (selectedDeveloper !== "all") {
-                        if (
-                          String(t.developer?._id) !== String(selectedDeveloper)
-                        ) {
-                          return false;
+                        // ✅ DEVELOPER FILTER
+                        if (selectedDeveloper !== "all") {
+                          if (
+                            String(t.developer?._id) !==
+                            String(selectedDeveloper)
+                          ) {
+                            return false;
+                          }
                         }
-                      }
-                      if (statusFilter === "stuck") {
+                        if (statusFilter === "stuck") {
+                          return (
+                            t.stuckReason &&
+                            t.stuckReason.trim() !== "" &&
+                            t.status !== "completed" &&
+                            t.status !== "hold"
+                          );
+                        }
+
+                        // ✅ STATUS FILTER
+                        if (statusFilter === "completed") {
+                          return t.status === "completed";
+                        }
+
+                        if (statusFilter === "in-progress") {
+                          return (
+                            t.status !== "completed" && t.status !== "hold"
+                          );
+                        }
+
+                        if (statusFilter === "overdue") {
+                          return getDueStatus(t) === "overdue";
+                        }
+
+                        if (statusFilter === "today") {
+                          return getDueStatus(t) === "today";
+                        }
+                        if (statusFilter === "tomorrow") {
+                          return getDueStatus(t) === "tomorrow"; // ✅ NEW
+                        }
+
+                        if (statusFilter === "week") {
+                          return getDueStatus(t) === "week"; // ✅ NEW
+                        }
+                        if (statusFilter === "dev-done") {
+                          return t.status === "testing";
+                        }
+                        if (statusFilter === "hold") return t.status === "hold";
+
+                        if (statusFilter === "penalty") {
+                          return (
+                            t.penaltyComment && t.penaltyComment.trim() !== ""
+                          );
+                        }
+
+                        return true;
+                      })
+                      .map((t) => {
+                        const lastLog = t.progressLogs?.slice(-1)[0];
+                        const dueStatus = getDueStatus(t);
                         return (
-                          t.stuckReason &&
-                          t.stuckReason.trim() !== "" &&
-                          t.status !== "completed" &&
-                          t.status !== "hold"
-                        );
-                      }
-
-                      // ✅ STATUS FILTER
-                      if (statusFilter === "completed") {
-                        return t.status === "completed";
-                      }
-
-                      if (statusFilter === "in-progress") {
-                        return t.status !== "completed" && t.status !== "hold";
-                      }
-
-                      if (statusFilter === "overdue") {
-                        return getDueStatus(t) === "overdue";
-                      }
-
-                      if (statusFilter === "today") {
-                        return getDueStatus(t) === "today";
-                      }
-                      if (statusFilter === "tomorrow") {
-                        return getDueStatus(t) === "tomorrow"; // ✅ NEW
-                      }
-
-                      if (statusFilter === "week") {
-                        return getDueStatus(t) === "week"; // ✅ NEW
-                      }
-                      if (statusFilter === "dev-done") {
-                        return t.status === "testing";
-                      }
-                      if (statusFilter === "hold") return t.status === "hold";
-
-                      if (statusFilter === "penalty") {
-                        return (
-                          t.penaltyComment && t.penaltyComment.trim() !== ""
-                        );
-                      }
-
-                      return true;
-                    })
-                    .map((t) => {
-                      const lastLog = t.progressLogs?.slice(-1)[0];
-                      const dueStatus = getDueStatus(t);
-                      return (
-                        <tr
-                          key={t._id}
-                          className={`border-t hover:bg-gray-50
+                          <tr
+                            key={t._id}
+                            className={`border-t hover:bg-gray-50
     ${dueStatus === "overdue" ? "" : dueStatus === "today" ? "" : ""}
   `}
-                        >
-                          <td className="p-3 text-center max-w-[160px] break-words whitespace-normal">
-                            {t.crawlerName}
-                          </td>
-                          <td className="p-3 text-center relative group max-w-[140px]">
-                            <div className="truncate">
-                              {getProjectName(t.projectId)}
-                            </div>
+                          >
+                            <td className="p-3 text-center max-w-[160px] break-words whitespace-normal">
+                              {t.crawlerName}
+                            </td>
+                            <td className="p-3 text-center relative group max-w-[140px]">
+                              <div className="truncate">
+                                {getProjectName(t.projectId)}
+                              </div>
 
-                            {/* ✅ Hover Full Text */}
-                            <div className="absolute hidden group-hover:block bottom-full mb-2 left-1/2 -translate-x-1/2 bg-gray-900 text-white text-xs p-2 rounded shadow-xl w-max max-w-[220px] z-[9999] break-words">
-                              {getProjectName(t.projectId)}
-                            </div>
-                          </td>
+                              {/* ✅ Hover Full Text */}
+                              <div className="absolute hidden group-hover:block bottom-full mb-2 left-1/2 -translate-x-1/2 bg-gray-900 text-white text-xs p-2 rounded shadow-xl w-max max-w-[220px] z-[9999] break-words">
+                                {getProjectName(t.projectId)}
+                              </div>
+                            </td>
 
-                          <td className="p-3 text-center">
-                            {t.developer?.name}
-                          </td>
-                          <td className="p-3 text-center">{t.tester?.name}</td>
-                          <td className="p-3 text-center">
-                            {formatDate(t.assignDate)}
-                          </td>
-                          <td className="p-3 text-center">
-                            {t.expectedCompletionDate && t.status !== "hold" ? (
-                              <span
-                                className={`px-2 py-1 rounded text-xs font-semibold flex items-center justify-center inline-block
+                            <td className="p-3 text-center">
+                              {t.developer?.name}
+                            </td>
+                            <td className="p-3 text-center">
+                              {t.tester?.name}
+                            </td>
+                            <td className="p-3 text-center">
+                              {formatDate(t.assignDate)}
+                            </td>
+                            <td className="p-3 text-center">
+                              {t.expectedCompletionDate &&
+                              t.status !== "hold" ? (
+                                <span
+                                  className={`px-2 py-1 rounded text-xs font-semibold flex items-center justify-center inline-block
   ${
     getDueStatus(t) === "overdue"
       ? "bg-red-100 text-red-600"
@@ -553,53 +576,53 @@ export default function Tasks() {
               : "text-gray-500"
   }
 `}
-                              >
-                                {formatDate(t.expectedCompletionDate)}
-                                {getDueStatus(t) === "overdue" && " Overdue"}
-                                {getDueStatus(t) === "today" && " Today"}
-                                {getDueStatus(t) === "tomorrow" &&
-                                  " Tomorrow"}{" "}
-                                {getDueStatus(t) === "dueSoon" && " Due Soon"}
-                                {getDueStatus(t) === "week" && " This Week"}
-                              </span>
-                            ) : (
-                              "-"
-                            )}
-                          </td>
-
-                          <td
-                            className="p-3 w-[80px] max-w-[100px] cursor-pointer hover:bg-gray-50"
-                            onClick={() => navigate(`/tasks/${t._id}`)}
-                          >
-                            <div className="bg-gray-200 h-1.5 rounded ">
-                              <div
-                                className="bg-indigo-600 h-1.5 rounded "
-                                style={{ width: `${t.progress || 0}%` }}
-                              ></div>
-                            </div>
-
-                            <span className="text-[10px] text-gray-600">
-                              {t.progress}%
-                            </span>
-
-                            <div className="relative group">
-                              {/* SHORT TEXT */}
-                              <p className="text-xs text-gray-500 mt-1 truncate max-w-[120px]">
-                                {lastLog?.note || "No update"}
-                              </p>
-
-                              {/* HOVER FULL TEXT */}
-                              {lastLog?.note && (
-                                <div className="absolute left-0 bottom-full mb-2 hidden group-hover:block bg-gray-900 text-white text-xs p-2 rounded shadow-xl w-[220px] z-[9999] break-words">
-                                  {lastLog.note}
-                                </div>
+                                >
+                                  {formatDate(t.expectedCompletionDate)}
+                                  {getDueStatus(t) === "overdue" && " Overdue"}
+                                  {getDueStatus(t) === "today" && " Today"}
+                                  {getDueStatus(t) === "tomorrow" &&
+                                    " Tomorrow"}{" "}
+                                  {getDueStatus(t) === "dueSoon" && " Due Soon"}
+                                  {getDueStatus(t) === "week" && " This Week"}
+                                </span>
+                              ) : (
+                                "-"
                               )}
-                            </div>
-                          </td>
+                            </td>
 
-                          <td className="p-3 text-center">
-                            <span
-                              className={`inline-flex items-center justify-center w-[80px] px-2 py-1 rounded text-[10px] font-semibold
+                            <td
+                              className="p-3 w-[80px] max-w-[100px] cursor-pointer hover:bg-gray-50"
+                              onClick={() => navigate(`/tasks/${t._id}`)}
+                            >
+                              <div className="bg-gray-200 h-1.5 rounded ">
+                                <div
+                                  className="bg-indigo-600 h-1.5 rounded "
+                                  style={{ width: `${t.progress || 0}%` }}
+                                ></div>
+                              </div>
+
+                              <span className="text-[10px] text-gray-600">
+                                {t.progress}%
+                              </span>
+
+                              <div className="relative group">
+                                {/* SHORT TEXT */}
+                                <p className="text-xs text-gray-500 mt-1 truncate max-w-[120px]">
+                                  {lastLog?.note || "No update"}
+                                </p>
+
+                                {/* HOVER FULL TEXT */}
+                                {lastLog?.note && (
+                                  <div className="absolute left-0 bottom-full mb-2 hidden group-hover:block bg-gray-900 text-white text-xs p-2 rounded shadow-xl w-[220px] z-[9999] break-words">
+                                    {lastLog.note}
+                                  </div>
+                                )}
+                              </div>
+                            </td>
+
+                            <td className="p-3 text-center">
+                              <span
+                                className={`inline-flex items-center justify-center w-[80px] px-2 py-1 rounded text-[10px] font-semibold
       ${
         t.status === "completed"
           ? "bg-green-100 text-green-600"
@@ -610,246 +633,250 @@ export default function Tasks() {
               : "bg-gray-100 text-gray-600"
       }
     `}
-                            >
-                              {t.status.toUpperCase()}
-                            </span>
-                          </td>
-                          <td className="p-3 max-w-[120px] relative group cursor-pointer">
-                            <div className="truncate">
-                              {t.stuckReason || "-"}
-                            </div>
-
-                            {t.stuckReason && (
-                              <div className="absolute left-0 bottom-full mb-2 hidden group-hover:block bg-gray-900 text-white text-xs p-2 rounded shadow-xl w-[220px] z-[9999] break-words">
-                                {t.stuckReason}
-                              </div>
-                            )}
-                          </td>
-
-                          <td className="p-3  max-w-[120px]">
-                            {t.testingSheetUrl ? (
-                              <a href={t.testingSheetUrl} target="_blank">
-                                View
-                              </a>
-                            ) : (
-                              "-"
-                            )}
-                          </td>
-
-                          <td className="p-3 max-w-[120px] relative group cursor-pointer text-xs text-blue-600">
-                            <div className="truncate">
-                              {lastLog?.testerComment || "-"}
-                            </div>
-
-                            {lastLog?.testerComment && (
-                              <div className="absolute left-0 bottom-full mb-2 hidden group-hover:block bg-gray-900 text-white text-xs p-2 rounded shadow-xl w-[180px] z-[9999] break-words">
-                                {lastLog.testerComment}
-                              </div>
-                            )}
-                          </td>
-                          <td className="p-3 max-w-[140px] relative group cursor-pointer text-xs text-indigo-600">
-                            {/* CLICKABLE FOR ADMIN */}
-                            <div
-                              className={`truncate ${
-                                user?.role === "admin"
-                                  ? "cursor-pointer hover:underline"
-                                  : ""
-                              }`}
-                              onClick={() => {
-                                if (user?.role === "admin") {
-                                  addLeadComment(t._id, t.leadComment || "");
-                                }
-                              }}
-                            >
-                              {t.leadComment || "-"}
-                            </div>
-
-                            {/* HOVER FULL TEXT */}
-                            {t.leadComment && (
-                              <div className="absolute left-0 bottom-full mb-2 hidden group-hover:block bg-gray-900 text-white text-xs p-2 rounded shadow-xl w-[200px] z-[9999] break-words">
-                                {t.leadComment}
-                              </div>
-                            )}
-                          </td>
-
-                          <td className="p-3 text-xs text-red-600 max-w-[120px] relative group cursor-pointer">
-                            {/* SHORT TEXT */}
-                            <div className="truncate">
-                              {t.penaltyComment || "-"}
-                            </div>
-
-                            {/* HOVER FULL TEXT */}
-                            {t.penaltyComment && (
-                              <div className="absolute left-0 bottom-full mb-2 hidden group-hover:block bg-gray-900 text-white text-xs p-2 rounded shadow-xl w-[180px] z-[9999] break-words">
-                                {t.penaltyComment}
-                              </div>
-                            )}
-                          </td>
-
-                          {/* ✅ ACTION BUTTON */}
-                          <td className="p-3  max-w-[120px]">
-                            {(user?.role === "developer" ||
-                              user?.role === "admin") && (
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-
-                                  const rect =
-                                    e.currentTarget.getBoundingClientRect();
-
-                                  const estimatedHeight = 200;
-                                  let top = rect.bottom;
-                                  let left = rect.right; // ✅ anchor to RIGHT side of button
-
-                                  if (
-                                    window.innerHeight - rect.bottom <
-                                    estimatedHeight
-                                  ) {
-                                    top = rect.top - estimatedHeight;
-                                  }
-
-                                  setMenuPosition({
-                                    x: left,
-                                    y: top,
-                                  });
-
-                                  setOpenMenu(
-                                    openMenu === t._id ? null : t._id,
-                                  );
-                                }}
-                                className="text-gray-600 text-lg px-2"
                               >
-                                ⋮
-                              </button>
-                            )}
+                                {t.status.toUpperCase()}
+                              </span>
+                            </td>
+                            <td className="p-3 max-w-[120px] relative group cursor-pointer">
+                              <div className="truncate">
+                                {t.stuckReason || "-"}
+                              </div>
 
-                            {/* ✅ FLOATING DROPDOWN */}
-                            {/* ✅ FLOATING DROPDOWN */}
-                            {openMenu === t._id && (
+                              {t.stuckReason && (
+                                <div className="absolute left-0 bottom-full mb-2 hidden group-hover:block bg-gray-900 text-white text-xs p-2 rounded shadow-xl w-[220px] z-[9999] break-words">
+                                  {t.stuckReason}
+                                </div>
+                              )}
+                            </td>
+
+                            <td className="p-3  max-w-[120px]">
+                              {t.testingSheetUrl ? (
+                                <a href={t.testingSheetUrl} target="_blank">
+                                  View
+                                </a>
+                              ) : (
+                                "-"
+                              )}
+                            </td>
+
+                            <td className="p-3 max-w-[120px] relative group cursor-pointer text-xs text-blue-600">
+                              <div className="truncate">
+                                {lastLog?.testerComment || "-"}
+                              </div>
+
+                              {lastLog?.testerComment && (
+                                <div className="absolute left-0 bottom-full mb-2 hidden group-hover:block bg-gray-900 text-white text-xs p-2 rounded shadow-xl w-[180px] z-[9999] break-words">
+                                  {lastLog.testerComment}
+                                </div>
+                              )}
+                            </td>
+                            <td className="p-3 max-w-[140px] relative group cursor-pointer text-xs text-indigo-600">
+                              {/* CLICKABLE FOR ADMIN */}
                               <div
-                                onClick={(e) => e.stopPropagation()}
-                                style={{
-                                  position: "fixed",
-                                  top: menuPosition.y + 5,
-                                  right: window.innerWidth - menuPosition.x, // ✅ KEY FIX
+                                className={`truncate ${
+                                  user?.role === "admin"
+                                    ? "cursor-pointer hover:underline"
+                                    : ""
+                                }`}
+                                onClick={() => {
+                                  if (user?.role === "admin") {
+                                    addLeadComment(t._id, t.leadComment || "");
+                                  }
                                 }}
-                                className="w-[200px] max-h-[180px] overflow-y-auto bg-white border rounded-xl text-sm shadow-2xl z-[99999]"
                               >
-                                {/* 👨‍💻 DEVELOPER */}
-                                {user?.role === "developer" && (
-                                  <>
-                                    <button
-                                      onClick={() => {
-                                        updateProgress(t._id, t.progress || 0);
-                                        setOpenMenu(null);
-                                      }}
-                                      className="flex items-center gap-2 w-full px-4 py-2 text-sm hover:bg-gray-100 text-blue-600 "
-                                    >
-                                      🔄 Update Progress
-                                    </button>
+                                {t.leadComment || "-"}
+                              </div>
 
-                                    <button
-                                      onClick={() => {
-                                        updateSheet(t._id);
-                                        setOpenMenu(null);
-                                      }}
-                                      className="flex items-center gap-2 w-full px-4 py-2 text-sm hover:bg-gray-100 text-purple-600"
-                                    >
-                                      📄 Testing Sheet
-                                    </button>
+                              {/* HOVER FULL TEXT */}
+                              {t.leadComment && (
+                                <div className="absolute left-0 bottom-full mb-2 hidden group-hover:block bg-gray-900 text-white text-xs p-2 rounded shadow-xl w-[200px] z-[9999] break-words">
+                                  {t.leadComment}
+                                </div>
+                              )}
+                            </td>
 
-                                    <button
-                                      onClick={() => {
-                                        addTesterComment(t._id);
-                                        setOpenMenu(null);
-                                      }}
-                                      className="flex items-center gap-2 w-full px-4 py-2 text-sm hover:bg-gray-100 text-indigo-600"
-                                    >
-                                      💬 Tester Comment
-                                    </button>
+                            <td className="p-3 text-xs text-red-600 max-w-[120px] relative group cursor-pointer">
+                              {/* SHORT TEXT */}
+                              <div className="truncate">
+                                {t.penaltyComment || "-"}
+                              </div>
 
-                                    <button
-                                      onClick={() => {
-                                        updateStuck(t._id);
-                                        setOpenMenu(null);
-                                      }}
-                                      className="flex items-center gap-2 w-full px-4 py-2 text-sm hover:bg-gray-100 text-red-500"
-                                    >
-                                      ⚠️ Stuck
-                                    </button>
+                              {/* HOVER FULL TEXT */}
+                              {t.penaltyComment && (
+                                <div className="absolute left-0 bottom-full mb-2 hidden group-hover:block bg-gray-900 text-white text-xs p-2 rounded shadow-xl w-[180px] z-[9999] break-words">
+                                  {t.penaltyComment}
+                                </div>
+                              )}
+                            </td>
 
-                                    <div className="border-t"></div>
-                                  </>
-                                )}
+                            {/* ✅ ACTION BUTTON */}
+                            <td className="p-3  max-w-[120px]">
+                              {(user?.role === "developer" ||
+                                user?.role === "admin") && (
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
 
-                                {/* 👑 ADMIN */}
-                                {user?.role === "admin" && (
-                                  <>
-                                    {t.status !== "completed" && (
+                                    const rect =
+                                      e.currentTarget.getBoundingClientRect();
+
+                                    const estimatedHeight = 200;
+                                    let top = rect.bottom;
+                                    let left = rect.right; // ✅ anchor to RIGHT side of button
+
+                                    if (
+                                      window.innerHeight - rect.bottom <
+                                      estimatedHeight
+                                    ) {
+                                      top = rect.top - estimatedHeight;
+                                    }
+
+                                    setMenuPosition({
+                                      x: left,
+                                      y: top,
+                                    });
+
+                                    setOpenMenu(
+                                      openMenu === t._id ? null : t._id,
+                                    );
+                                  }}
+                                  className="text-gray-600 text-lg px-2"
+                                >
+                                  ⋮
+                                </button>
+                              )}
+
+                              {/* ✅ FLOATING DROPDOWN */}
+                              {/* ✅ FLOATING DROPDOWN */}
+                              {openMenu === t._id && (
+                                <div
+                                  onClick={(e) => e.stopPropagation()}
+                                  style={{
+                                    position: "fixed",
+                                    top: menuPosition.y + 5,
+                                    right: window.innerWidth - menuPosition.x, // ✅ KEY FIX
+                                  }}
+                                  className="w-[200px] max-h-[180px] overflow-y-auto bg-white border rounded-xl text-sm shadow-2xl z-[99999]"
+                                >
+                                  {/* 👨‍💻 DEVELOPER */}
+                                  {user?.role === "developer" && (
+                                    <>
                                       <button
                                         onClick={() => {
-                                          verifyTask(t._id);
+                                          updateProgress(
+                                            t._id,
+                                            t.progress || 0,
+                                          );
                                           setOpenMenu(null);
                                         }}
-                                        className="flex items-center gap-2 w-full px-4 py-2 text-sm hover:bg-gray-100 text-green-600"
+                                        className="flex items-center gap-2 w-full px-4 py-2 text-sm hover:bg-gray-100 text-blue-600 "
                                       >
-                                        ✅ Verify
+                                        🔄 Update Progress
                                       </button>
-                                    )}
-                                    <button
-                                      onClick={() => {
-                                        markHold(t._id);
-                                        setOpenMenu(null);
-                                      }}
-                                      className="flex items-center gap-2 w-full px-4 py-2 text-sm hover:bg-gray-100 text-red-600"
-                                    >
-                                      ⏸ Hold
-                                    </button>
 
-                                    <button
-                                      onClick={() => {
-                                        addPenalty(t._id);
-                                        setOpenMenu(null);
-                                      }}
-                                      className="flex items-center gap-2 w-full px-4 py-2 text-sm hover:bg-gray-100 text-red-600"
-                                    >
-                                      🚫 Penalty
-                                    </button>
+                                      <button
+                                        onClick={() => {
+                                          updateSheet(t._id);
+                                          setOpenMenu(null);
+                                        }}
+                                        className="flex items-center gap-2 w-full px-4 py-2 text-sm hover:bg-gray-100 text-purple-600"
+                                      >
+                                        📄 Testing Sheet
+                                      </button>
 
-                                    <div className="border-t"></div>
+                                      <button
+                                        onClick={() => {
+                                          addTesterComment(t._id);
+                                          setOpenMenu(null);
+                                        }}
+                                        className="flex items-center gap-2 w-full px-4 py-2 text-sm hover:bg-gray-100 text-indigo-600"
+                                      >
+                                        💬 Tester Comment
+                                      </button>
 
-                                    <button
-                                      onClick={() => {
-                                        editTask(t);
-                                        setOpenMenu(null);
-                                      }}
-                                      className="flex items-center gap-2 w-full px-4 py-2 text-sm hover:bg-gray-100 text-gray-700"
-                                    >
-                                      ✏️ Edit
-                                    </button>
+                                      <button
+                                        onClick={() => {
+                                          updateStuck(t._id);
+                                          setOpenMenu(null);
+                                        }}
+                                        className="flex items-center gap-2 w-full px-4 py-2 text-sm hover:bg-gray-100 text-red-500"
+                                      >
+                                        ⚠️ Stuck
+                                      </button>
 
-                                    <button
-                                      onClick={() => {
-                                        deleteTask(t._id);
-                                        setOpenMenu(null);
-                                      }}
-                                      className="flex items-center gap-2 w-full px-4 py-2 text-sm hover:bg-gray-100 text-red-700"
-                                    >
-                                      🗑 Delete
-                                    </button>
-                                  </>
-                                )}
-                              </div>
-                            )}
-                          </td>
-                        </tr>
-                      );
-                    })}
-                </tbody>
-              </table>
+                                      <div className="border-t"></div>
+                                    </>
+                                  )}
+
+                                  {/* 👑 ADMIN */}
+                                  {user?.role === "admin" && (
+                                    <>
+                                      {t.status !== "completed" && (
+                                        <button
+                                          onClick={() => {
+                                            verifyTask(t._id);
+                                            setOpenMenu(null);
+                                          }}
+                                          className="flex items-center gap-2 w-full px-4 py-2 text-sm hover:bg-gray-100 text-green-600"
+                                        >
+                                          ✅ Verify
+                                        </button>
+                                      )}
+                                      <button
+                                        onClick={() => {
+                                          markHold(t._id);
+                                          setOpenMenu(null);
+                                        }}
+                                        className="flex items-center gap-2 w-full px-4 py-2 text-sm hover:bg-gray-100 text-red-600"
+                                      >
+                                        ⏸ Hold
+                                      </button>
+
+                                      <button
+                                        onClick={() => {
+                                          addPenalty(t._id);
+                                          setOpenMenu(null);
+                                        }}
+                                        className="flex items-center gap-2 w-full px-4 py-2 text-sm hover:bg-gray-100 text-red-600"
+                                      >
+                                        🚫 Penalty
+                                      </button>
+
+                                      <div className="border-t"></div>
+
+                                      <button
+                                        onClick={() => {
+                                          editTask(t);
+                                          setOpenMenu(null);
+                                        }}
+                                        className="flex items-center gap-2 w-full px-4 py-2 text-sm hover:bg-gray-100 text-gray-700"
+                                      >
+                                        ✏️ Edit
+                                      </button>
+
+                                      <button
+                                        onClick={() => {
+                                          deleteTask(t._id);
+                                          setOpenMenu(null);
+                                        }}
+                                        className="flex items-center gap-2 w-full px-4 py-2 text-sm hover:bg-gray-100 text-red-700"
+                                      >
+                                        🗑 Delete
+                                      </button>
+                                    </>
+                                  )}
+                                </div>
+                              )}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                  </tbody>
+                </table>
+              </div>
             </div>
           </div>
-        </div>
+        )}
       </div>
 
       {showModal && (
