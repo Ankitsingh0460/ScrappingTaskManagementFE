@@ -51,25 +51,43 @@ export default function TeamMembers() {
     setLastUpdated(res.data);
   };
 
-  const handleSubmit = async () => {
-    const payload = {
-      ...form,
-      skills: form.skills ? form.skills.split(",").map((s) => s.trim()) : [],
-    };
+ const handleSubmit = async () => {
+  const payload = {
+    ...form,
+    skills: form.skills ? form.skills.split(",").map((s) => s.trim()) : [],
+  };
 
+  // ✅ CLOSE MODAL INSTANTLY
+  setShowModal(false);
+  setForm({});
+  setEditData(null);
+
+  try {
     if (editData) {
-      await axios.put(`/team/${editData._id}`, payload);
-      toast.success("Team member updated successfully");
+      await toast.promise(
+        axios.put(`/team/${editData._id}`, payload),
+        {
+          loading: "Updating skills...",
+          success: "Skills updated successfully ✅",
+          error: "Update failed ❌",
+        }
+      );
     } else {
-      await axios.post("/team", payload); // ✅ userId will go from form
-      toast.success("Team member added successfully");
+      await toast.promise(
+        axios.post("/team", payload),
+        {
+          loading: "Adding member...",
+          success: "Member added successfully ✅",
+          error: "Failed to add ❌",
+        }
+      );
     }
 
-    setShowModal(false);
-    setForm({});
-    setEditData(null);
-    fetchMembers();
-  };
+    fetchMembers(); // refresh after success
+  } catch (err) {
+    console.error(err);
+  }
+};
 
   const deleteMember = async (id) => {
     if (!confirm("Delete member?")) return;
