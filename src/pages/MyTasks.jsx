@@ -4,6 +4,7 @@ import Sidebar from "../components/Sidebar";
 import Header from "../components/Header";
 import { HashLoader } from "react-spinners";
 import toast from "react-hot-toast";
+import { Link } from "react-router-dom";
 export default function MyTasks() {
   const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -46,6 +47,7 @@ export default function MyTasks() {
               {tasks
                 .filter((t) => t.status !== "completed" && t.status !== "hold")
                 .map((t) => (
+                  <Link to={`/tasks/${t._id}`} key={t._id} className="no-underline">
                   <div
                     key={t._id}
                     className="bg-white p-5 rounded-xl shadow hover:shadow-md transition"
@@ -82,6 +84,7 @@ export default function MyTasks() {
                         : "-"}
                     </p>
                   </div>
+                  </Link>
                 ))}
             </div>
           )}
