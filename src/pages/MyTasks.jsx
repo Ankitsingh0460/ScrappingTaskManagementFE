@@ -68,14 +68,14 @@ export default function MyTasks() {
                       key={t._id}
                       className="no-underline"
                     >
-                   <div
-  className={`p-5 rounded-xl border h-[220px] flex flex-col justify-between
+        <div
+  className={`p-5 rounded-xl border h-[220px] flex flex-col justify-between overflow-hidden
     transition-all duration-300 ease-in-out transform
     hover:-translate-y-1 hover:shadow-xl hover:scale-[1.02]
     ${
       isTester
         ? "bg-blue-50 border-blue-500 ring-2 ring-blue-300"
-        : "bg-blue-50 border-blue-500 ring-2 ring-blue-300"
+        : "bg-white"
     }
   `}
 >
