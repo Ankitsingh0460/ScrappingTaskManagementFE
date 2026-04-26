@@ -4,7 +4,7 @@ import { io } from "socket.io-client";
 import axios from "../api/axios";
 import dayjs from "dayjs";
 import { IoMdNotifications } from "react-icons/io";
-
+import { Link } from "react-router-dom";
 
 const socket = io(import.meta.env.VITE_API_URL || "http://localhost:5000");
 
@@ -64,10 +64,10 @@ export default function Header() {
     }
   };
   useEffect(() => {
-  if (Notification.permission !== "granted") {
-    Notification.requestPermission();
-  }
-}, []);
+    if (Notification.permission !== "granted") {
+      Notification.requestPermission();
+    }
+  }, []);
 
   // ✅ SOCKET
   useEffect(() => {
@@ -75,18 +75,18 @@ export default function Header() {
 
     socket.emit("join", user._id);
 
-   socket.on("new_notification", (data) => {
-  setNotifications((prev) => [data, ...prev]);
-  setUnread((prev) => prev + 1);
+    socket.on("new_notification", (data) => {
+      setNotifications((prev) => [data, ...prev]);
+      setUnread((prev) => prev + 1);
 
-  // 🔔 WINDOWS NOTIFICATION
-  if (Notification.permission === "granted") {
-    new Notification("🔔 New Notification", {
-      body: data.message,
-      icon: "/logo.png", // optional (put in public folder)
+      // 🔔 WINDOWS NOTIFICATION
+      if (Notification.permission === "granted") {
+        new Notification("🔔 New Notification", {
+          body: data.message,
+          icon: "/logo.png", // optional (put in public folder)
+        });
+      }
     });
-  }
-});
 
     fetchNotifications();
 
@@ -97,7 +97,7 @@ export default function Header() {
   const markAsRead = async (id) => {
     await axios.put(`/notifications/read/${id}`);
     setNotifications((prev) =>
-      prev.map((n) => (n._id === id ? { ...n, isRead: true } : n))
+      prev.map((n) => (n._id === id ? { ...n, isRead: true } : n)),
     );
     setUnread((prev) => Math.max(prev - 1, 0));
   };
@@ -108,7 +108,7 @@ export default function Header() {
       if (!notifications.length) return;
 
       const confirmClear = window.confirm(
-        "Are you sure you want to clear all notifications?"
+        "Are you sure you want to clear all notifications?",
       );
       if (!confirmClear) return;
 
@@ -196,9 +196,8 @@ export default function Header() {
           {/* DROPDOWN */}
           {showNotif && (
             <div className="absolute right-0 mt-3 w-96 bg-white border rounded-xl shadow-xl h-[420px] flex flex-col z-50">
-              
               {/* HEADER */}
-              <div className="flex justify-between items-center px-4 py-3 border-b sticky top-0 bg-white">
+              <div className="flex justify-between items-center px-4 py-3 border-b bg-white">
                 <p className="text-sm font-semibold">Notifications</p>
 
                 <button
@@ -214,8 +213,8 @@ export default function Header() {
                 </button>
               </div>
 
-              {/* LIST */}
-              <div className="overflow-y-auto flex-1">
+              {/* SCROLLABLE LIST */}
+              <div className="overflow-y-auto flex-1 mb-2 rounded-b-xl">
                 {notifications.length === 0 && (
                   <div className="flex items-center justify-center h-full text-gray-400 text-sm">
                     No notifications
@@ -224,25 +223,29 @@ export default function Header() {
 
                 {Object.keys(grouped).map((day) => (
                   <div key={day}>
-                    <p className="text-xs text-gray-400 px-4 py-2 sticky top-0 bg-white">
+                    <p className="text-xs text-gray-400 px-4 py-2 sticky top-0 bg-white z-10">
                       {day}
                     </p>
 
                     {grouped[day].map((n) => (
-                      <div
-                        key={n._id}
-                        onClick={() => markAsRead(n._id)}
-                        className={`px-4 py-3 cursor-pointer border-l-4 ${
-                          !n.isRead
-                            ? "bg-blue-50 border-blue-500"
-                            : "border-transparent hover:bg-gray-50"
-                        }`}
-                      >
-                        <p className="text-sm text-gray-700">{n.message}</p>
-                        <p className="text-[10px] text-gray-400 mt-1">
-                          {dayjs(n.createdAt).format("hh:mm A")}
-                        </p>
-                      </div>
+                      <Link to="/tasks" key={n._id}>
+                        <div
+                          onClick={() => markAsRead(n._id)}
+                          className={`px-4 py-3 cursor-pointer border-l-4 min-h-[80px] ${
+                            !n.isRead
+                              ? "bg-blue-50 border-blue-500"
+                              : "border-transparent hover:bg-gray-50"
+                          }`}
+                        >
+                          <p className="text-sm text-gray-700 break-words">
+                            {n.message}
+                          </p>
+
+                          <p className="text-[10px] text-gray-400 mt-1">
+                            {dayjs(n.createdAt).format("hh:mm A")}
+                          </p>
+                        </div>
+                      </Link>
                     ))}
                   </div>
                 ))}
@@ -252,31 +255,31 @@ export default function Header() {
         </div>
 
         {/* PROFILE */}
-    <div className="flex items-center gap-3 mr-4">
-  {/* USER BOX */}
-  <div className="flex items-center gap-3 bg-gray-50 px-3 py-1.5 rounded-lg">
-    <div className="w-8 h-8 rounded-full bg-indigo-500 text-white flex items-center justify-center text-sm font-semibold">
-      {user?.name?.charAt(0)?.toUpperCase() || "U"}
-    </div>
+        <div className="flex items-center gap-3 mr-4">
+          {/* USER BOX */}
+          <div className="flex items-center gap-3 bg-gray-50 px-3 py-1.5 rounded-lg">
+            <div className="w-8 h-8 rounded-full bg-indigo-500 text-white flex items-center justify-center text-sm font-semibold">
+              {user?.name?.charAt(0)?.toUpperCase() || "U"}
+            </div>
 
-    <div className="flex flex-col leading-tight">
-      <span className="text-sm font-medium text-gray-700">
-        {user?.name?.toUpperCase()}
-      </span>
-      <span className="text-[11px] text-gray-500 capitalize">
-        {user?.role}
-      </span>
-    </div>
-  </div>
+            <div className="flex flex-col leading-tight">
+              <span className="text-sm font-medium text-gray-700">
+                {user?.name?.toUpperCase()}
+              </span>
+              <span className="text-[11px] text-gray-500 capitalize">
+                {user?.role}
+              </span>
+            </div>
+          </div>
 
-  {/* LOGOUT BUTTON (MATCH HEIGHT) */}
-  <button
-    onClick={logout}
-    className="bg-red-500 text-white px-3 py-1.5 rounded-lg text-sm flex items-center justify-center hover:bg-red-600 transition min-h-[38px]"
-  >
-    Logout
-  </button>
-</div>
+          {/* LOGOUT BUTTON (MATCH HEIGHT) */}
+          <button
+            onClick={logout}
+            className="bg-red-500 text-white px-3 py-1.5 rounded-lg text-sm flex items-center justify-center hover:bg-red-600 transition min-h-[38px]"
+          >
+            Logout
+          </button>
+        </div>
       </div>
     </div>
   );

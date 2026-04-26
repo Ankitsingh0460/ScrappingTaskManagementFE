@@ -19,6 +19,10 @@ export default function Projects() {
   const [editProjectData, setEditProjectData] = useState(null);
   const [editName, setEditName] = useState("");
 
+  // ✅ PAGINATION STATES
+  const [currentPage, setCurrentPage] = useState(1);
+  const projectsPerPage = 5;
+
   useEffect(() => {
     fetchProjects();
   }, []);
@@ -40,7 +44,6 @@ export default function Projects() {
     setLoading(false);
   };
 
-  // ❌ OLD DELETE (kept but not used)
   const deleteProject = async (id) => {
     const confirmDelete = window.confirm(
       "Are you sure you want to delete this project?",
@@ -52,7 +55,6 @@ export default function Projects() {
     toast.success("Project deleted successfully");
   };
 
-  // ✅ NEW DELETE FLOW
   const openDeleteModal = (id) => {
     setProjectToDelete(id);
     setShowDeleteModal(true);
@@ -61,7 +63,6 @@ export default function Projects() {
   const handleConfirmDelete = async () => {
     const id = projectToDelete;
 
-    // 🔥 close instantly
     setShowDeleteModal(false);
     setProjectToDelete(null);
 
@@ -74,7 +75,6 @@ export default function Projects() {
     fetchProjects();
   };
 
-  // ❌ OLD EDIT (kept but not used)
   const editProject = async (project) => {
     const newName = prompt("Edit project name", project.name);
     if (!newName || !newName.trim()) return;
@@ -87,7 +87,6 @@ export default function Projects() {
     toast.success("Project updated successfully");
   };
 
-  // ✅ NEW EDIT FLOW
   const openEditModal = (project) => {
     setEditProjectData(project);
     setEditName(project.name);
@@ -99,7 +98,6 @@ export default function Projects() {
 
     const id = editProjectData._id;
 
-    // 🔥 close instantly
     setShowEditModal(false);
 
     await toast.promise(axios.put(`/projects/${id}`, { name: editName }), {
@@ -113,12 +111,26 @@ export default function Projects() {
     fetchProjects();
   };
 
+  // ✅ PAGINATION LOGIC
+  const indexOfLast = currentPage * projectsPerPage;
+  const indexOfFirst = indexOfLast - projectsPerPage;
+  const currentProjects = projects.slice(indexOfFirst, indexOfLast);
+
+  const totalPages = Math.ceil(projects.length / projectsPerPage);
+
   return (
     <div className="flex">
-      <Sidebar />
+      {/* ✅ FIXED SIDEBAR */}
+      <div className="fixed left-0 top-0 h-screen w-[240px] z-40">
+        <Sidebar />
+      </div>
 
-      <div className="flex-1 bg-gray-100 min-h-screen">
-        <Header />
+      {/* ✅ MAIN CONTENT */}
+      <div className="flex-1 bg-gray-100 min-h-screen ml-[240px]">
+        {/* ✅ STICKY HEADER */}
+        <div className="sticky top-0 z-30">
+          <Header />
+        </div>
 
         {loading ? (
           <div className="flex justify-center items-center h-[60vh]">
@@ -156,7 +168,7 @@ export default function Projects() {
                 </thead>
 
                 <tbody>
-                  {projects.map((p) => (
+                  {currentProjects.map((p) => (
                     <tr key={p._id} className="border-t hover:bg-gray-50">
                       <td className="p-3 font-medium">{p.name}</td>
 
@@ -179,12 +191,35 @@ export default function Projects() {
                   ))}
                 </tbody>
               </table>
+
+              {/* ✅ PAGINATION UI */}
+              <div className="flex justify-center items-center gap-4 mt-6">
+                <button
+                  disabled={currentPage === 1}
+                  onClick={() => setCurrentPage((prev) => prev - 1)}
+                  className="px-4 py-1 bg-gray-200 rounded disabled:opacity-50"
+                >
+                  Prev
+                </button>
+
+                <span className="text-sm">
+                  Page {currentPage} of {totalPages}
+                </span>
+
+                <button
+                  disabled={currentPage === totalPages}
+                  onClick={() => setCurrentPage((prev) => prev + 1)}
+                  className="px-4 py-1 bg-gray-200 rounded disabled:opacity-50"
+                >
+                  Next
+                </button>
+              </div>
             </div>
           </div>
         )}
       </div>
 
-      {/* ✅ DELETE MODAL */}
+      {/* DELETE MODAL */}
       {showDeleteModal && (
         <div className="fixed inset-0 bg-black/40 flex justify-center items-center z-50">
           <div className="bg-white p-6 rounded-xl w-[320px] shadow-lg">
@@ -212,7 +247,7 @@ export default function Projects() {
         </div>
       )}
 
-      {/* ✅ EDIT MODAL */}
+      {/* EDIT MODAL */}
       {showEditModal && (
         <div className="fixed inset-0 bg-black/40 flex justify-center items-center z-50">
           <div className="bg-white p-6 rounded-xl w-[320px] shadow-lg">
